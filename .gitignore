@@ -46,7 +46,6 @@ cookies.txt
 server-profile.json
 
 # uploaded user files (keep demo files)
-/data/*.json
 /public/uploads/*
 !/public/uploads/demo-*
 !/public/uploads/avatar.svg

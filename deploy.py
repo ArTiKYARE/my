@@ -142,10 +142,20 @@ def deploy_ssh() -> None:
 
     repo_url = get_repo_url()
 
+    backup_dir = f"{REMOTE_BASE}/.deploy-backup"
+
     # Команды на сервере: клонирование/обновление репозитория, сборка и запуск
     commands = [
         f"if [ ! -d {REMOTE_BASE}/.git ]; then rm -rf {REMOTE_BASE} && git clone {repo_url} {REMOTE_BASE}; fi",
+        # Бэкапим пользовательские данные перед git pull
+        f"mkdir -p {backup_dir}/uploads && cp {REMOTE_BASE}/data/profile.json {backup_dir}/profile.json 2>/dev/null || true",
+        f"cp {REMOTE_BASE}/data/projects.json {backup_dir}/projects.json 2>/dev/null || true",
+        f"cp -r {REMOTE_BASE}/public/uploads/* {backup_dir}/uploads/ 2>/dev/null || true",
         f"cd {REMOTE_BASE} && git checkout . && git pull origin main",
+        # Восстанавливаем пользовательские данные после git pull
+        f"cp {backup_dir}/profile.json {REMOTE_BASE}/data/profile.json 2>/dev/null || true",
+        f"cp {backup_dir}/projects.json {REMOTE_BASE}/data/projects.json 2>/dev/null || true",
+        f"cp -r {backup_dir}/uploads/* {REMOTE_BASE}/public/uploads/ 2>/dev/null || true",
         f"cd {REMOTE_BASE} && npm install",
         f"cd {REMOTE_BASE} && npm run build",
         f"cd {REMOTE_BASE} && docker build -t {IMAGE_NAME} .",
