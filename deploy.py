@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -11,14 +12,15 @@ REMOTE_USER = os.getenv("KOSKO_USER", "root").strip()
 REMOTE_PASSWORD = os.getenv("KOSKO_PASSWORD", "").strip()
 REMOTE_BASE = os.getenv("KOSKO_REMOTE_BASE", "/opt/kos-ko").strip()
 REMOTE_CADDYFILE_PATH = os.getenv(
-    "KOSKO_CADDYFILE_PATH", "/opt/caddy/Caddyfile"
+    "KOSKO_CADDYFILE_PATH", "/opt/safescan/Caddyfile"
 ).strip()
 REMOTE_RELOAD_CMD = os.getenv(
     "KOSKO_RELOAD_CMD",
-    "docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile",
+    "docker exec safescan-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile",
 ).strip()
 IMAGE_NAME = os.getenv("KOSKO_IMAGE_NAME", "kos-ko:latest").strip()
 CONTAINER_NAME = os.getenv("KOSKO_CONTAINER_NAME", "kos-ko").strip()
+DOMAIN = os.getenv("KOSKO_DOMAIN", "kos-ko.ru").strip()
 REPO_URL = os.getenv("KOSKO_REPO_URL", "").strip()
 
 
@@ -84,8 +86,37 @@ def ensure_remote_dir(sftp_client, remote_dir: str) -> None:
         sftp_client.mkdir(d)
 
 
+def update_caddyfile(sftp_client) -> None:
+    """Добавляет или обновляет блок домена в общем Caddyfile на сервере."""
+    print(f"\nUpdating Caddyfile at {REMOTE_CADDYFILE_PATH} ...")
+    ensure_remote_dir(sftp_client, os.path.dirname(REMOTE_CADDYFILE_PATH))
+
+    local_path = Path("Caddyfile.remote")
+    try:
+        try:
+            sftp_client.get(REMOTE_CADDYFILE_PATH, str(local_path))
+            content = local_path.read_text(encoding="utf-8")
+        except IOError:
+            content = ""
+
+        block = f"""{DOMAIN} {{
+    reverse_proxy {CONTAINER_NAME}:3000
+}}
+"""
+        pattern = re.compile(rf"^{re.escape(DOMAIN)}\s*\{{.*?\}}\n?", re.MULTILINE | re.DOTALL)
+        if pattern.search(content):
+            content = pattern.sub(block, content)
+        else:
+            content = content.rstrip("\n") + "\n\n" + block
+
+        local_path.write_text(content, encoding="utf-8")
+        sftp_client.put(str(local_path), REMOTE_CADDYFILE_PATH)
+    finally:
+        local_path.unlink(missing_ok=True)
+
+
 def deploy_ssh() -> None:
-    """Деплоит приложение на сервер с сборкой внутри контейнера/среды сервера."""
+    """Деплоит приложение на сервер с сборкой внутри среды сервера."""
     print("\n=== SSH DEPLOY ===")
     if not REMOTE_HOST or not REMOTE_PASSWORD:
         print(
@@ -105,11 +136,7 @@ def deploy_ssh() -> None:
     sftp = client.open_sftp()
     try:
         ensure_remote_dir(sftp, REMOTE_BASE)
-
-        # Загружаем Caddyfile
-        print(f"Uploading Caddyfile to {REMOTE_CADDYFILE_PATH} ...")
-        ensure_remote_dir(sftp, os.path.dirname(REMOTE_CADDYFILE_PATH))
-        sftp.put("Caddyfile", REMOTE_CADDYFILE_PATH)
+        update_caddyfile(sftp)
     finally:
         sftp.close()
 
@@ -117,10 +144,8 @@ def deploy_ssh() -> None:
 
     # Команды на сервере: клонирование/обновление репозитория, сборка и запуск
     commands = [
-        # Проверяем/клонируем репозиторий
         f"if [ ! -d {REMOTE_BASE}/.git ]; then rm -rf {REMOTE_BASE} && git clone {repo_url} {REMOTE_BASE}; fi",
         f"cd {REMOTE_BASE} && git pull origin main",
-        # Загружаем .env, если он есть локально (будет передан отдельно)
         f"cd {REMOTE_BASE} && npm install",
         f"cd {REMOTE_BASE} && npm run build",
         f"cd {REMOTE_BASE} && docker build -t {IMAGE_NAME} .",
@@ -142,6 +167,13 @@ def deploy_ssh() -> None:
             print(out[-2000:])
             print(err[-2000:])
             break
+
+    if exit_code != 0:
+        client.close()
+        with open("deploy_output.txt", "w", encoding="utf-8") as f:
+            f.write("\n\n".join(full_output))
+        print(f"\nDeploy failed with exit code {exit_code}")
+        sys.exit(exit_code)
 
     # Загружаем .env в самом конце, чтобы перезаписать возможный старый файл
     env_source = ".env" if os.path.exists(".env") else ".env.local"

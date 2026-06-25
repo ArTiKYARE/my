@@ -6,8 +6,8 @@ services:
     env_file:
       - .env
     networks:
-      - caddy
+      - safescan_safescan_net
 
 networks:
-  caddy:
+  safescan_safescan_net:
     external: true

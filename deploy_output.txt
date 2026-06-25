@@ -1,0 +1,42 @@
+=== CMD ===
+if [ ! -d /opt/kos-ko/.git ]; then rm -rf /opt/kos-ko && git clone https://github.com/ArTiKYARE/my.git /opt/kos-ko; fi
+=== EXIT ===
+0
+=== STDOUT ===
+
+=== STDERR ===
+Cloning into '/opt/kos-ko'...
+
+
+=== CMD ===
+cd /opt/kos-ko && git pull origin main
+=== EXIT ===
+0
+=== STDOUT ===
+Already up to date.
+
+=== STDERR ===
+From https://github.com/ArTiKYARE/my
+ * branch            main       -> FETCH_HEAD
+
+
+=== CMD ===
+cd /opt/kos-ko && npm install
+=== EXIT ===
+127
+=== STDOUT ===
+
+=== STDERR ===
+bash: line 1: npm: command not found
+
+
+=== CMD ===
+cd /opt/kos-ko && docker compose up -d --force-recreate
+=== EXIT ===
+1
+=== STDOUT ===
+
+=== STDERR ===
+ Image kos-ko:latest Pulling 
+ Image kos-ko:latest Error pull access denied for kos-ko, repository does not exist or may require 'docker login'
+Error response from daemon: pull access denied for kos-ko, repository does not exist or may require 'docker login'
