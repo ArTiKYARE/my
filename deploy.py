@@ -145,7 +145,7 @@ def deploy_ssh() -> None:
     # Команды на сервере: клонирование/обновление репозитория, сборка и запуск
     commands = [
         f"if [ ! -d {REMOTE_BASE}/.git ]; then rm -rf {REMOTE_BASE} && git clone {repo_url} {REMOTE_BASE}; fi",
-        f"cd {REMOTE_BASE} && git pull origin main",
+        f"cd {REMOTE_BASE} && git checkout . && git pull origin main",
         f"cd {REMOTE_BASE} && npm install",
         f"cd {REMOTE_BASE} && npm run build",
         f"cd {REMOTE_BASE} && docker build -t {IMAGE_NAME} .",
