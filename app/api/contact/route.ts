@@ -9,6 +9,7 @@ interface Lead {
   name: string;
   contact: string;
   description: string;
+  status: "new" | "in-progress" | "done" | "archived";
   createdAt: string;
 }
 
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       name,
       contact,
       description,
+      status: "new",
       createdAt: new Date().toISOString(),
     };
 

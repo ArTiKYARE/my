@@ -6,8 +6,9 @@ import Image from "next/image";
 import { Project, Profile } from "../lib/types";
 import AdminProfileForm from "./AdminProfileForm";
 import AdminProjectForm from "./AdminProjectForm";
+import AdminLeads from "./AdminLeads";
 
-type Tab = "profile" | "projects";
+type Tab = "profile" | "projects" | "leads";
 
 interface AdminDashboardProps {
   profile: Profile;
@@ -18,7 +19,7 @@ export default function AdminDashboard({
   profile,
   projects: initialProjects,
 }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("projects");
+  const [activeTab, setActiveTab] = useState<Tab>("leads");
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projects] = useState(initialProjects);
 
@@ -58,10 +59,23 @@ export default function AdminDashboard({
         <div className="flex gap-0 mb-8 border border-border w-fit">
           <button
             onClick={() => {
-              setActiveTab("projects");
+              setActiveTab("leads");
               setEditingProject(null);
             }}
             className={`px-6 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === "leads"
+                ? "bg-foreground text-background"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Заявки
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("projects");
+              setEditingProject(null);
+            }}
+            className={`px-6 py-2.5 text-sm font-medium transition-colors border-l border-border ${
               activeTab === "projects"
                 ? "bg-foreground text-background"
                 : "text-muted hover:text-foreground"
@@ -83,6 +97,13 @@ export default function AdminDashboard({
             Профиль
           </button>
         </div>
+
+        {activeTab === "leads" && (
+          <section>
+            <h2 className="text-2xl font-semibold mb-6">Заявки с сайта</h2>
+            <AdminLeads />
+          </section>
+        )}
 
         {activeTab === "profile" && (
           <section className="panel p-6 md:p-8">

@@ -18,6 +18,17 @@ export interface Contacts {
   website?: string;
 }
 
+export type LeadStatus = "new" | "in-progress" | "done" | "archived";
+
+export interface Lead {
+  id: string;
+  name: string;
+  contact: string;
+  description: string;
+  status: LeadStatus;
+  createdAt: string;
+}
+
 export interface Profile {
   name: string;
   role: string;

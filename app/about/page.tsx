@@ -16,10 +16,10 @@ const stats = [
 ];
 
 const team = [
-  { name: "Денис К.", role: "Основатель, разработчик" },
-  { name: "Анна М.", role: "UI/UX-дизайнер" },
-  { name: "Сергей П.", role: "Frontend-разработчик" },
-  { name: "Мария В.", role: "Project-менеджер" },
+  { name: "Константин К.", role: "Основатель, разработчик" },
+  { name: "Софья Т.", role: "UI/UX-дизайнер" },
+  { name: "Сергей М.", role: "Frontend-разработчик" },
+  { name: "Александер Ш.", role: "Project-менеджер" },
 ];
 
 function Avatar({ name }: { name: string }) {

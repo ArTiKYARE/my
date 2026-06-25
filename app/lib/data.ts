@@ -4,11 +4,12 @@ import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { Project, Profile } from "./types";
+import { Project, Profile, Lead, LeadStatus } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
 const PROFILE_FILE = path.join(DATA_DIR, "profile.json");
+const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 
 async function ensureDataDir() {
   try {
@@ -149,4 +150,23 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   return { success: true, profile };
+}
+export async function getLeads(): Promise<Lead[]> {
+  const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
+  return leads.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export async function updateLeadStatus(
+  id: string,
+  status: LeadStatus
+): Promise<Lead | null> {
+  const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
+  const index = leads.findIndex((lead) => lead.id === id);
+  if (index === -1) return null;
+
+  leads[index] = { ...leads[index], status };
+  await writeJsonFile(LEADS_FILE, leads);
+  return leads[index];
 }
