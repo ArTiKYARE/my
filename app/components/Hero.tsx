@@ -1,8 +1,11 @@
 import Link from "next/link";
+import HeroBackground from "./HeroBackground";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex items-center hero-glow border-b border-border">
+    <section className="relative min-h-[90vh] flex items-center bg-background border-b border-border overflow-hidden">
+      <HeroBackground />
+
       <div className="container-main relative z-10 px-4 md:px-6 pt-16">
         <div className="max-w-3xl">
           <p className="section-label">Веб-студия</p>

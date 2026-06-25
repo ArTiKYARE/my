@@ -5,6 +5,7 @@ import Skills from "./components/Skills";
 import Projects from "./components/Projects";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import StickyCTA from "./components/StickyCTA";
 import { getProfile, getProjects } from "./lib/data";
 
 export default async function Home() {
@@ -24,6 +25,7 @@ export default async function Home() {
         <Contact contacts={profile.contacts} />
       </main>
       <Footer name={profile.name} />
+      <StickyCTA />
     </>
   );
 }

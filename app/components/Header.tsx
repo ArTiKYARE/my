@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useState } from "react";
 
 const navItems = [
-  { label: "О компании", href: "#about" },
-  { label: "Услуги", href: "#services" },
-  { label: "Кейсы", href: "#cases" },
-  { label: "Контакты", href: "#contacts" },
+  { label: "О студии", href: "/about" },
+  { label: "Услуги", href: "/#services" },
+  { label: "Кейсы", href: "/#cases" },
+  { label: "Контакты", href: "/#contacts" },
 ];
 
 export default function Header() {

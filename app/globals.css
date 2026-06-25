@@ -219,3 +219,42 @@ button:focus-visible {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Hero background animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.code-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.code-float-1 {
+  animation-delay: 0s;
+}
+
+.code-float-2 {
+  animation-delay: 2s;
+}
+
+.code-float-3 {
+  animation-delay: 4s;
+}
+
+.terminal-window {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.terminal-cursor {
+  animation: blink 1s step-end infinite;
+}

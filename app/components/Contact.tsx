@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Contacts } from "../lib/types";
 
 interface ContactProps {
@@ -67,6 +70,35 @@ const contactConfig = [
 ];
 
 export default function Contact({ contacts }: ContactProps) {
+  const [state, setState] = useState<{
+    pending: boolean;
+    success?: boolean;
+    error?: string;
+  }>({ pending: false });
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setState({ pending: true });
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setState({ pending: false, error: result.error || "Ошибка отправки" });
+      } else {
+        setState({ pending: false, success: true });
+        e.currentTarget.reset();
+      }
+    } catch {
+      setState({ pending: false, error: "Не удалось отправить заявку" });
+    }
+  }
+
   const availableContacts = contactConfig.filter(
     (item) => contacts[item.key as keyof Contacts]
   );
@@ -80,13 +112,79 @@ export default function Contact({ contacts }: ContactProps) {
             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
               Обсудить проект
             </h2>
-            <p className="text-muted max-w-lg">
+            <p className="text-muted max-w-lg mb-8">
               Расскажите о задаче — мы свяжемся с вами и предложим решение.
             </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                    Имя
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    maxLength={100}
+                    placeholder="Как к вам обращаться"
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="contact" className="block text-sm font-medium text-foreground mb-2">
+                    Email или телефон
+                  </label>
+                  <input
+                    id="contact"
+                    name="contact"
+                    type="text"
+                    required
+                    maxLength={100}
+                    placeholder="hello@example.com"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+                  Описание проекта
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  maxLength={2000}
+                  placeholder="Кратко опишите идею, сроки и бюджет"
+                  className="input-field resize-none"
+                />
+              </div>
+
+              {state.success && (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+                  Спасибо! Заявка отправлена — мы скоро свяжемся.
+                </div>
+              )}
+              {state.error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {state.error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={state.pending}
+                className="btn-primary px-8 py-3.5 text-sm font-medium disabled:opacity-50"
+              >
+                {state.pending ? "Отправка..." : "Отправить"}
+              </button>
+            </form>
           </div>
 
           {availableContacts.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-4 lg:pt-12">
               {availableContacts.map((item) => {
                 const value = contacts[item.key as keyof Contacts] as string;
                 return (
@@ -118,7 +216,7 @@ export default function Contact({ contacts }: ContactProps) {
               })}
             </div>
           ) : (
-            <div className="panel p-8">
+            <div className="panel p-8 lg:pt-12">
               <p className="text-muted">
                 Контакты ещё не добавлены. Укажите их в админ-панели.
               </p>
