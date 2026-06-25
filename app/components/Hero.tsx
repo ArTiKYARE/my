@@ -2,12 +2,12 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex items-center bg-background border-b border-border">
+    <section className="relative min-h-[90vh] flex items-center hero-glow border-b border-border">
       <div className="container-main relative z-10 px-4 md:px-6 pt-16">
         <div className="max-w-3xl">
           <p className="section-label">Веб-студия</p>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight mb-6 text-gradient">
             Kos-Ko
           </h1>
 

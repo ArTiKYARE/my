@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0b;
+  --background: #0b0b0d;
   --foreground: #fafafa;
-  --surface: #141416;
-  --surface-elevated: #1c1c1f;
-  --border: rgba(255, 255, 255, 0.08);
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --accent: #3b82f6;
-  --muted: #737373;
+  --surface: #151519;
+  --surface-elevated: #1e1e23;
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --accent: #60a5fa;
+  --muted: #9ca3af;
 }
 
 @theme inline {
@@ -184,4 +184,38 @@ button:focus-visible {
 .divider {
   height: 1px;
   background: var(--border);
+}
+
+/* Subtle top light line */
+.light-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
+}
+
+/* Hero soft glow background */
+.hero-glow {
+  background: radial-gradient(
+      ellipse 80% 60% at 20% 30%,
+      rgba(59, 130, 246, 0.06),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 80% 10%,
+      rgba(255, 255, 255, 0.03),
+      transparent
+    ),
+    var(--background);
+}
+
+/* Text gradient for headings */
+.text-gradient {
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--muted) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
