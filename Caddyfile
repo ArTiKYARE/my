@@ -1,0 +1,3 @@
+kos-ko.ru {
+    reverse_proxy kos-ko:3000
+}

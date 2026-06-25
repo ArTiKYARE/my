@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0b;
+  --foreground: #fafafa;
+  --surface: #141416;
+  --surface-elevated: #1c1c1f;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent: #3b82f6;
+  --muted: #737373;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.35);
+  color: white;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Panel utility */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Subtle border panel */
+.panel-elevated {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+
+/* Primary text accent */
+.text-brand {
+  color: var(--primary);
+}
+
+/* Card hover */
+.card-hover {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.card-hover:hover {
+  background: var(--surface-elevated);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Focus styles */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible {
+  outline: none;
+  ring: 2px;
+  ring-offset: 2px;
+  ring-offset-background: var(--background);
+  ring-color: var(--primary);
+}
+
+/* Button primary */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Button secondary */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Form inputs */
+.input-field {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.75rem 1rem;
+  color: var(--foreground);
+  transition: border-color 0.2s ease, background 0.2s ease;
+  width: 100%;
+}
+
+.input-field::placeholder {
+  color: var(--muted);
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  background: var(--surface-elevated);
+}
+
+/* Section spacing */
+.section {
+  padding: 5rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding: 7rem 1.5rem;
+  }
+}
+
+.container-main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Section label */
+.section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+}

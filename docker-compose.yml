@@ -1,0 +1,13 @@
+services:
+  kos-ko:
+    image: kos-ko:latest
+    container_name: kos-ko
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - caddy
+
+networks:
+  caddy:
+    external: true
