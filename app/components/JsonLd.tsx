@@ -20,14 +20,16 @@ export default async function JsonLd() {
     url: BASE_URL,
     logo: `${BASE_URL}/logo-light.png`,
     description: profile.bio.replace(/\n/g, " "),
-    contactPoint: profile.contacts.email
-      ? {
-          "@type": "ContactPoint",
-          email: profile.contacts.email,
-          contactType: "sales",
-          availableLanguage: ["Russian"],
-        }
-      : undefined,
+    contactPoint:
+      profile.contacts.email || profile.contacts.phone
+        ? {
+            "@type": "ContactPoint",
+            email: profile.contacts.email || undefined,
+            telephone: profile.contacts.phone || undefined,
+            contactType: "sales",
+            availableLanguage: ["Russian"],
+          }
+        : undefined,
     sameAs: sameAs.length > 0 ? sameAs : undefined,
   };
 

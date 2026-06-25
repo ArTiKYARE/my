@@ -122,7 +122,7 @@ export async function saveProfile(formData: FormData) {
   const skillsRaw = (formData.get("skills") as string) || "";
 
   const contacts: Record<string, string> = {};
-  const contactFields = ["email", "telegram", "github", "linkedin", "website"];
+  const contactFields = ["email", "phone", "telegram", "github", "linkedin", "website"];
   for (const field of contactFields) {
     const value = (formData.get(`contacts.${field}`) as string) || "";
     if (value.trim()) contacts[field] = value.trim();

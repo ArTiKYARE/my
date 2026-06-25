@@ -131,6 +131,18 @@ export default function AdminProfileForm({ profile }: AdminProfileFormProps) {
         </div>
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">
+            Телефон
+          </label>
+          <input
+            name="contacts.phone"
+            type="tel"
+            defaultValue={profile.contacts.phone || ""}
+            className="input-field"
+            placeholder="+7 (999) 999-99-99"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
             Telegram
           </label>
           <input

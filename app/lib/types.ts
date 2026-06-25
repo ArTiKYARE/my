@@ -12,6 +12,7 @@ export interface Project {
 
 export interface Contacts {
   email?: string;
+  phone?: string;
   telegram?: string;
   github?: string;
   linkedin?: string;
