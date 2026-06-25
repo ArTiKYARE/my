@@ -151,9 +151,15 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/admin");
   return { success: true, profile };
 }
+const VALID_STATUSES: LeadStatus[] = ["new", "in-progress", "done", "archived"];
+
 export async function getLeads(): Promise<Lead[]> {
   const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
-  return leads.sort(
+  const normalized = leads.map((lead) => ({
+    ...lead,
+    status: VALID_STATUSES.includes(lead.status) ? lead.status : "new",
+  }));
+  return normalized.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 }
