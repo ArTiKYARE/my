@@ -20,9 +20,22 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
       {/* Content */}
       <div className="flex flex-col flex-1 p-6">
-        <h3 className="text-xl font-semibold mb-2 group-hover:text-brand transition-colors">
-          {project.title}
-        </h3>
+        <div className="flex items-center gap-3 mb-2">
+          <h3 className="text-xl font-semibold group-hover:text-brand transition-colors">
+            {project.title}
+          </h3>
+          {project.logo && (
+            <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-surface-elevated border border-border">
+              <Image
+                src={project.logo}
+                alt={`${project.title} логотип`}
+                fill
+                className="object-contain p-1"
+              />
+            </div>
+          )}
+        </div>
+
         <p className="text-muted text-sm leading-relaxed mb-5 flex-1">
           {project.description}
         </p>
