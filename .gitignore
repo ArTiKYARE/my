@@ -42,6 +42,8 @@ next-env.d.ts
 
 # deploy
 deploy_output.txt
+cookies.txt
+server-profile.json
 
 # uploaded user files (keep demo files)
 /public/uploads/*

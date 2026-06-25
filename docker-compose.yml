@@ -7,6 +7,9 @@ services:
       - .env
     networks:
       - safescan_safescan_net
+    volumes:
+      - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
 
 networks:
   safescan_safescan_net:
