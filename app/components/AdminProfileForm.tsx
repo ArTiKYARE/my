@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { saveProfile } from "../lib/data";
+import { FormEvent, useState } from "react";
 import { Profile } from "../lib/types";
 import ImageUploader from "./ImageUploader";
 
@@ -10,19 +9,44 @@ interface AdminProfileFormProps {
 }
 
 export default function AdminProfileForm({ profile }: AdminProfileFormProps) {
-  const [state, action, pending] = useActionState(
-    async (_prevState: unknown, formData: FormData) => saveProfile(formData),
-    undefined
-  );
+  const [state, setState] = useState<{ error?: string; success?: boolean }>({});
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    setState({});
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setState({ error: result.error || "Ошибка сохранения" });
+      } else {
+        setState({ success: true });
+        window.location.reload();
+      }
+    } catch {
+      setState({ error: "Не удалось сохранить профиль" });
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <form action={action} className="space-y-6">
-      {state?.error && (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {state.error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
           {state.error}
         </div>
       )}
-      {state?.success && (
+      {state.success && (
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
           Профиль успешно сохранён
         </div>

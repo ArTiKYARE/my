@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { saveProject, deleteProject } from "../lib/data";
+import { FormEvent, useState } from "react";
 import { Project } from "../lib/types";
 import ImageUploader from "./ImageUploader";
 
@@ -16,41 +15,83 @@ export default function AdminProjectForm({
   onCancel,
   onSaved,
 }: AdminProjectFormProps) {
-  const [state, action, pending] = useActionState(
-    async (_prevState: unknown, formData: FormData) => {
-      const result = await saveProject(formData);
-      if (result.success && onSaved) {
-        onSaved();
-      }
-      return result;
-    },
-    undefined
-  );
-
-  const [deleteState, deleteAction, deletePending] = useActionState(
-    async (_prevState: unknown, formData: FormData) => {
-      const result = await deleteProject(formData);
-      if (result.success && onSaved) {
-        onSaved();
-      }
-      return result;
-    },
-    undefined
-  );
-
+  const [state, setState] = useState<{ error?: string; success?: boolean }>({});
+  const [pending, setPending] = useState(false);
   const isEditing = !!project;
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    setState({});
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setState({ error: result.error || "Ошибка сохранения" });
+      } else {
+        setState({ success: true });
+        if (onSaved) {
+          onSaved();
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch {
+      setState({ error: "Не удалось сохранить проект" });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!project) return;
+    setPending(true);
+    setState({});
+
+    try {
+      const formData = new FormData();
+      formData.append("id", project.id);
+      const response = await fetch("/api/projects/delete", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setState({ error: result.error || "Ошибка удаления" });
+      } else {
+        if (onSaved) {
+          onSaved();
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch {
+      setState({ error: "Не удалось удалить проект" });
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <form action={action} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <input type="hidden" name="id" defaultValue={project?.id} />
 
-        {(state?.error || deleteState?.error) && (
+        {state.error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            {state?.error || deleteState?.error}
+            {state.error}
           </div>
         )}
-        {state?.success && (
+        {state.success && (
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
             Проект успешно сохранён
           </div>
@@ -166,16 +207,15 @@ export default function AdminProjectForm({
       </form>
 
       {isEditing && (
-        <form action={deleteAction} className="flex">
-          <input type="hidden" name="id" value={project.id} />
+        <div className="flex">
           <button
-            type="submit"
-            disabled={deletePending}
+            onClick={handleDelete}
+            disabled={pending}
             className="px-8 py-3 text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors disabled:opacity-50"
           >
-            {deletePending ? "Удаление..." : "Удалить проект"}
+            {pending ? "Удаление..." : "Удалить проект"}
           </button>
-        </form>
+        </div>
       )}
     </div>
   );

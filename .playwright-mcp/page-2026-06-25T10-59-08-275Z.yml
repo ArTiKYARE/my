@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - heading "Kos-Ko — Админ-панель" [level=1] [ref=e5]
+        - generic [ref=e6]:
+          - link "Открыть сайт" [ref=e7] [cursor=pointer]:
+            - /url: /
+          - button "Выйти" [ref=e9]
+    - main [ref=e10]:
+      - generic [ref=e11]:
+        - button "Проекты" [ref=e12]
+        - button "Профиль" [ref=e13]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "Новый проект" [level=2] [ref=e16]
+          - generic [ref=e18]:
+            - generic [ref=e19]:
+              - generic [ref=e20]: Название проекта
+              - textbox "Название проекта" [ref=e21]
+            - generic [ref=e22]:
+              - generic [ref=e23]: Краткое описание
+              - textbox "Описание проекта" [ref=e24]
+            - generic [ref=e25]:
+              - generic [ref=e26]:
+                - generic [ref=e27]: Логотип проекта
+                - button "Загрузить" [ref=e29]
+              - generic [ref=e30]:
+                - generic [ref=e31]: Баннер проекта
+                - button "Загрузить" [ref=e33]
+            - generic [ref=e34]:
+              - generic [ref=e35]: Теги (через запятую)
+              - textbox "React, TypeScript, Node.js" [ref=e36]
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - generic [ref=e39]: Ссылка на проект
+                - textbox "https://example.com" [ref=e40]
+              - generic [ref=e41]:
+                - generic [ref=e42]: Ссылка на GitHub
+                - textbox "https://github.com/username/repo" [ref=e43]
+            - button "Добавить проект" [ref=e45]
+        - generic [ref=e46]:
+          - heading "Все проекты" [level=2] [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - img "SafeScanGet" [ref=e51]
+              - generic [ref=e52]:
+                - heading "SafeScanGet" [level=3] [ref=e53]
+                - paragraph [ref=e54]: Сервис для бесплатной проверки сайтов на уязвимости. Разработали лендинг и личный кабинет с инструментами сканирования.
+              - button "Редактировать" [ref=e55]
+            - generic [ref=e56]:
+              - img "РемСтройПроект" [ref=e58]
+              - generic [ref=e59]:
+                - heading "РемСтройПроект" [level=3] [ref=e60]
+                - paragraph [ref=e61]: Корпоративный сайт строительной компании. Адаптивный дизайн, каталог услуг, формы обратной связи и SEO-оптимизация.
+              - button "Редактировать" [ref=e62]
+  - alert [ref=e63]
