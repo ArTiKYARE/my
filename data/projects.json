@@ -1,35 +1,24 @@
 [
   {
-    "id": "corporate-site-alpha",
-    "title": "Корпоративный сайт Alpha",
-    "description": "Полноценный корпоративный сайт с каталогом услуг, формами заявок и адамин-панелью для управления контентом.",
-    "logo": "/uploads/demo-logo.svg",
-    "banner": "/uploads/demo-banner.svg",
-    "tags": ["Next.js", "React", "TypeScript"],
-    "link": "https://example.com",
+    "id": "safescanget",
+    "title": "SafeScanGet",
+    "description": "Сервис для бесплатной проверки сайтов на уязвимости. Разработали лендинг и личный кабинет с инструментами сканирования.",
+    "logo": "/uploads/safescanget-logo.ico",
+    "banner": "/uploads/safescanget-banner.png",
+    "tags": ["Next.js", "React", "TypeScript", "Landing Page"],
+    "link": "https://safescanget.ru",
     "github": "",
     "createdAt": "2026-06-25T00:00:00.000Z"
   },
   {
-    "id": "landing-beta",
-    "title": "Лендинг Beta",
-    "description": "Высококонверсионный лендинг для запуска продукта. Быстрая загрузка, адаптивная вёрстка и интеграция с CRM.",
-    "logo": "/uploads/demo-logo.svg",
-    "banner": "/uploads/demo-banner.svg",
-    "tags": ["Landing Page", "Tailwind CSS"],
-    "link": "https://example.com",
+    "id": "remstroyproect",
+    "title": "РемСтройПроект",
+    "description": "Корпоративный сайт строительной компании. Адаптивный дизайн, каталог услуг, формы обратной связи и SEO-оптимизация.",
+    "logo": "/uploads/remstroyproect-logo.ico",
+    "banner": "/uploads/remstroyproect-banner.png",
+    "tags": ["Корпоративный сайт", "Адаптивная вёрстка", "SEO"],
+    "link": "https://remstroyproect.ru",
     "github": "",
-    "createdAt": "2026-05-15T00:00:00.000Z"
-  },
-  {
-    "id": "webapp-gamma",
-    "title": "Веб-приложение Gamma",
-    "description": "Внутренний инструмент для автоматизации бизнес-процессов: авторизация, дашборд, роли пользователей и экспорт данных.",
-    "logo": "/uploads/demo-logo.svg",
-    "banner": "/uploads/demo-banner.svg",
-    "tags": ["React", "Node.js", "PostgreSQL"],
-    "link": "https://example.com",
-    "github": "",
-    "createdAt": "2026-04-01T00:00:00.000Z"
+    "createdAt": "2026-05-10T00:00:00.000Z"
   }
 ]

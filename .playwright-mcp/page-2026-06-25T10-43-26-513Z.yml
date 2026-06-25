@@ -1,0 +1,288 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - main [ref=e3]:
+    - navigation [ref=e4]:
+      - generic [ref=e6]:
+        - link "SafeScanGet — на главную" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img "SafeScanGet" [ref=e8]
+          - generic [ref=e9]: SafeScanGet
+        - generic [ref=e10]:
+          - link "Статьи" [ref=e11] [cursor=pointer]:
+            - /url: /blog
+            - button "Статьи" [ref=e12]
+          - link "Тарифы" [ref=e13] [cursor=pointer]:
+            - /url: /pricing
+            - button "Тарифы" [ref=e14]
+          - link "Демо" [ref=e15] [cursor=pointer]:
+            - /url: /demo-scan
+            - button "Демо" [ref=e16]:
+              - img [ref=e17]
+              - text: Демо
+          - link "Войти" [ref=e22] [cursor=pointer]:
+            - /url: /login
+            - button "Войти" [ref=e23]
+          - link "Зарегистрироваться" [ref=e24] [cursor=pointer]:
+            - /url: /register
+            - button "Зарегистрироваться" [ref=e25]
+    - generic [ref=e28]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - text: Сканер уязвимостей веб-приложений
+      - heading "Проверка сайта на уязвимости до атаки злоумышленников" [level=1] [ref=e34]:
+        - text: Проверка сайта на уязвимости
+        - text: до атаки злоумышленников
+      - paragraph [ref=e35]: "SafeScanGet анализирует ваш сайт на 76+ типов уязвимостей: XSS, SQL-инъекции, небезопасные заголовки, утечки данных, проблемы SSL/TLS и многое другое. Только обнаружение — без эксплуатации."
+      - generic [ref=e36]:
+        - link "Начать бесплатно" [ref=e37] [cursor=pointer]:
+          - /url: /login
+          - button "Начать бесплатно" [ref=e38]:
+            - text: Начать бесплатно
+            - img [ref=e39]
+        - link "Попробовать демо" [ref=e41] [cursor=pointer]:
+          - /url: /demo-scan
+          - button "Попробовать демо" [ref=e42]:
+            - text: Попробовать демо
+            - img [ref=e43]
+        - link "Посмотреть тарифы" [ref=e48] [cursor=pointer]:
+          - /url: /pricing
+          - button "Посмотреть тарифы" [ref=e49]
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]: —
+        - generic [ref=e55]: сканов выполнено
+      - generic [ref=e56]:
+        - generic [ref=e57]: —
+        - generic [ref=e58]: уязвимостей найдено
+      - generic [ref=e59]:
+        - generic [ref=e60]: —
+        - generic [ref=e61]: доменов проверено
+      - generic [ref=e62]:
+        - generic [ref=e63]: —
+        - generic [ref=e64]: пользователей
+    - generic [ref=e65]:
+      - generic [ref=e66]:
+        - generic [ref=e68]:
+          - img [ref=e69]
+          - text: Что проверяем
+        - heading "Возможности платформы" [level=2] [ref=e71]
+        - paragraph [ref=e72]: Комплексное сканирование с детектированием уязвимостей и рекомендациями по устранению
+      - generic [ref=e73]:
+        - generic [ref=e75]:
+          - img [ref=e77]
+          - heading "Security Headers" [level=3] [ref=e79]
+          - paragraph [ref=e80]: Проверка HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy и других заголовков безопасности
+        - generic [ref=e82]:
+          - img [ref=e84]
+          - heading "SSL / TLS" [level=3] [ref=e93]
+          - paragraph [ref=e94]: Анализ протоколов, шифров, сертификатов, OCSP Stapling, Perfect Forward Secrecy
+        - generic [ref=e96]:
+          - img [ref=e98]
+          - heading "XSS & Injection" [level=3] [ref=e101]
+          - paragraph [ref=e102]: Обнаружение XSS, SQLi, NoSQLi, Command Injection, SSTI с дифференциальным анализом
+        - generic [ref=e104]:
+          - img [ref=e106]
+          - heading "SSRF / XXE / Path Traversal" [level=3] [ref=e111]
+          - paragraph [ref=e112]: Детектирование SSRF, Blind SSRF, XXE, обхода путей с безопасными payload
+        - generic [ref=e114]:
+          - img [ref=e116]
+          - heading "Auth & Sessions" [level=3] [ref=e119]
+          - paragraph [ref=e120]: Проверка cookie, JWT, session fixation, политики паролей, MFA, защита от перебора
+        - generic [ref=e122]:
+          - img [ref=e124]
+          - heading "Network & Infrastructure" [level=3] [ref=e127]
+          - paragraph [ref=e128]: DNS, SPF/DKIM/DMARC, CDN/WAF detection, субдомены, IPv6, subdomain takeover
+        - generic [ref=e130]:
+          - img [ref=e132]
+          - heading "Info Leakage" [level=3] [ref=e137]
+          - paragraph [ref=e138]: Обнаружение .git, .env, backup файлов, API ключей, email в коде, метаданных
+        - generic [ref=e140]:
+          - img [ref=e142]
+          - heading "SCA" [level=3] [ref=e144]
+          - paragraph [ref=e145]: "Анализ зависимостей: уязвимые JS-библиотеки, CMS detection, technology fingerprinting"
+        - generic [ref=e147]:
+          - img [ref=e149]
+          - heading "CSRF / CORS" [level=3] [ref=e153]
+          - paragraph [ref=e154]: Проверка CSRF-токенов, SameSite, CORS misconfiguration, wildcard origin
+    - generic [ref=e156]:
+      - generic [ref=e157]:
+        - generic [ref=e159]:
+          - img [ref=e160]
+          - text: Простой процесс
+        - heading "Как это работает" [level=2] [ref=e165]
+        - paragraph [ref=e166]: Три простых шага от регистрации до полного отчёта безопасности
+      - generic [ref=e167]:
+        - generic [ref=e171]:
+          - generic [ref=e172]: "01"
+          - img [ref=e175]
+          - heading "Регистрация" [level=3] [ref=e178]
+          - paragraph [ref=e179]: Создайте аккаунт за 30 секунд и добавьте домен для сканирования. Подтвердите владение email.
+        - generic [ref=e183]:
+          - generic [ref=e184]: "02"
+          - img [ref=e187]
+          - heading "Запуск сканирования" [level=3] [ref=e189]
+          - paragraph [ref=e190]: Выберите тип скана (быстрый или полный) и запустите проверку. 12 модулей работают параллельно.
+        - generic [ref=e194]:
+          - generic [ref=e195]: "03"
+          - img [ref=e198]
+          - heading "Отчёт и рекомендации" [level=3] [ref=e201]
+          - paragraph [ref=e202]: Получите детальный отчёт с CVSS классификацией, приоритетами и конкретными рекомендациями по устранению.
+    - generic [ref=e204]:
+      - generic [ref=e205]:
+        - generic [ref=e206]:
+          - img [ref=e207]
+          - text: SEO
+        - heading "Проверка сайта на уязвимости — почему это важно?" [level=2] [ref=e209]
+      - generic [ref=e210]:
+        - paragraph [ref=e211]:
+          - strong [ref=e212]: Проверка сайта на уязвимости
+          - text: — это обязательный этап для любого веб-ресурса, который работает с пользовательскими данными, платежами или конфиденциальной информацией. Каждый день хакеры находят тысячи незащищённых сайтов, используя простейшие ошибки в коде или настройках сервера. Бесплатная проверка безопасности сайта в SafeScanGet позволяет выявить критические уязвимости до того, как ими воспользуются злоумышленники.
+        - heading "Что включает проверка безопасности сайта?" [level=3] [ref=e213]
+        - paragraph [ref=e214]:
+          - text: Наша платформа выполняет комплексный анализ веб-приложения по 76+ параметрам. Проверка сайта на уязвимости охватывает поиск
+          - strong [ref=e215]: SQL-инъекций
+          - text: ","
+          - strong [ref=e216]: XSS (межсайтового скриптинга)
+          - text: ","
+          - strong [ref=e217]: CSRF-атак
+          - text: ", неправильную конфигурацию SSL/TLS-сертификатов, утечки чувствительных данных (.env, .git, API-ключи), анализ заголовков безопасности (CSP, HSTS, X-Frame-Options) и многое другое. Каждый найденный дефект получает оценку по шкале CVSS и конкретные рекомендации по устранению."
+        - heading "Как часто нужно проводить проверку защищённости?" [level=3] [ref=e218]
+        - paragraph [ref=e219]:
+          - text: Рекомендуется проводить
+          - strong [ref=e220]: проверку безопасности сайта
+          - text: "минимум раз в месяц или после каждого крупного обновления. Новые уязвимости появляются постоянно: выходят новые версии библиотек, меняются настройки сервера, добавляется новый функционал. Регулярное сканирование помогает поддерживать защиту на актуальном уровне и соответствовать требованиям стандартов"
+          - strong [ref=e221]: OWASP Top 10
+          - text: ","
+          - strong [ref=e222]: PCI-DSS
+          - text: и
+          - strong [ref=e223]: 152-ФЗ
+          - text: о персональных данных.
+        - heading "Почему SafeScanGet?" [level=3] [ref=e224]
+        - list [ref=e225]:
+          - listitem [ref=e226]:
+            - strong [ref=e227]: Бесплатно и без ограничений
+            - text: — базовое сканирование доступно каждому без привязки карты и скрытых платежей.
+          - listitem [ref=e228]:
+            - strong [ref=e229]: 76+ модулей проверки
+            - text: — от поиска XSS до анализа защищённости DNS и почтовых записей.
+          - listitem [ref=e230]:
+            - strong [ref=e231]: Понятные отчёты
+            - text: — PDF, JSON и HTML с пошаговыми инструкциями по исправлению.
+          - listitem [ref=e232]:
+            - strong [ref=e233]: Без эксплуатации
+            - text: — только безопасное обнаружение, без риска повреждения сайта.
+    - generic [ref=e234]:
+      - generic [ref=e235]:
+        - generic [ref=e237]:
+          - img [ref=e238]
+          - text: Стандарты
+        - heading "Соответствие стандартам" [level=2] [ref=e241]
+        - paragraph [ref=e242]: Платформа соответствует ведущим стандартам безопасности
+      - generic [ref=e243]:
+        - generic [ref=e244]:
+          - img [ref=e245]
+          - generic [ref=e248]: OWASP Top 10
+        - generic [ref=e249]:
+          - img [ref=e250]
+          - generic [ref=e253]: ASVS
+        - generic [ref=e254]:
+          - img [ref=e255]
+          - generic [ref=e258]: NIST SP 800-53
+        - generic [ref=e259]:
+          - img [ref=e260]
+          - generic [ref=e263]: PCI-DSS
+        - generic [ref=e264]:
+          - img [ref=e265]
+          - generic [ref=e268]: 152-ФЗ
+        - generic [ref=e269]:
+          - img [ref=e270]
+          - generic [ref=e273]: GDPR
+        - generic [ref=e274]:
+          - img [ref=e275]
+          - generic [ref=e278]: CWE
+        - generic [ref=e279]:
+          - img [ref=e280]
+          - generic [ref=e283]: OWASP API Top 10
+    - generic [ref=e286]:
+      - heading "Готовы проверить безопасность?" [level=2] [ref=e287]
+      - paragraph [ref=e288]: Начните бесплатное сканирование и узнайте, какие уязвимости есть на вашем сайте
+      - generic [ref=e289]:
+        - link "Зарегистрироваться" [ref=e290] [cursor=pointer]:
+          - /url: /login
+          - button "Зарегистрироваться" [ref=e291]:
+            - text: Зарегистрироваться
+            - img [ref=e292]
+        - link "Попробовать демо" [ref=e294] [cursor=pointer]:
+          - /url: /demo-scan
+          - button "Попробовать демо" [ref=e295]:
+            - text: Попробовать демо
+            - img [ref=e296]
+    - generic [ref=e302]:
+      - generic [ref=e303]:
+        - generic [ref=e304]:
+          - link "SafeScanGet SafeScanGet" [ref=e305] [cursor=pointer]:
+            - /url: /
+            - img "SafeScanGet" [ref=e306]
+            - generic [ref=e307]: SafeScanGet
+          - paragraph [ref=e308]: Сканер уязвимостей веб-приложений. Обнаружение, а не эксплуатация. Предназначен для тестирования безопасности с согласия владельца.
+          - generic [ref=e309]:
+            - link "Telegram" [ref=e310] [cursor=pointer]:
+              - /url: https://t.me/artikyare
+              - img [ref=e311]
+            - link "Email" [ref=e313] [cursor=pointer]:
+              - /url: mailto:artikyare@yandex.ru
+              - img [ref=e314]
+        - generic [ref=e317]:
+          - heading "Продукт" [level=3] [ref=e318]
+          - list [ref=e319]:
+            - listitem [ref=e320]:
+              - link "Демо-скан" [ref=e321] [cursor=pointer]:
+                - /url: /demo-scan
+            - listitem [ref=e322]:
+              - link "Тарифы" [ref=e323] [cursor=pointer]:
+                - /url: /pricing
+            - listitem [ref=e324]:
+              - link "Вход" [ref=e325] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e326]:
+              - link "Регистрация" [ref=e327] [cursor=pointer]:
+                - /url: /register
+        - generic [ref=e328]:
+          - heading "Компания" [level=3] [ref=e329]
+          - list [ref=e330]:
+            - listitem [ref=e331]:
+              - link "Политика конфиденциальности" [ref=e332] [cursor=pointer]:
+                - /url: /privacy-policy
+            - listitem [ref=e333]:
+              - link "Связаться с нами" [ref=e334] [cursor=pointer]:
+                - /url: mailto:artikyare@yandex.ru
+        - generic [ref=e335]:
+          - heading "Контакты" [level=3] [ref=e336]
+          - list [ref=e337]:
+            - listitem [ref=e338]:
+              - 'link "Telegram: @artikyare" [ref=e339] [cursor=pointer]':
+                - /url: https://t.me/artikyare
+                - img [ref=e340]
+                - generic [ref=e342]: "Telegram: @artikyare"
+            - listitem [ref=e343]:
+              - link "artikyare@yandex.ru" [ref=e344] [cursor=pointer]:
+                - /url: mailto:artikyare@yandex.ru
+                - img [ref=e345]
+                - generic [ref=e348]: artikyare@yandex.ru
+      - generic [ref=e349]:
+        - generic [ref=e350]:
+          - generic [ref=e351]: © 2026 SafeScanGet. Все права защищены.
+          - generic [ref=e352]: ·
+          - generic [ref=e353]:
+            - img [ref=e354]
+            - text: Безопасность превыше всего
+        - generic [ref=e356]:
+          - generic [ref=e357]: "Принимаем к оплате:"
+          - generic [ref=e358]:
+            - generic [ref=e359]: ЮKassa
+            - generic [ref=e360]: Visa
+            - generic [ref=e361]: Mastercard
+            - generic [ref=e362]: МИР
+    - generic:
+      - button "Наверх":
+        - img

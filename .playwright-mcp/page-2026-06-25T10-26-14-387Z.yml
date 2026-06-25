@@ -1,0 +1,121 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Kos-Ko" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e5]:
+        - link "О компании" [ref=e6] [cursor=pointer]:
+          - /url: "#about"
+        - link "Услуги" [ref=e7] [cursor=pointer]:
+          - /url: "#services"
+        - link "Кейсы" [ref=e8] [cursor=pointer]:
+          - /url: "#cases"
+        - link "Контакты" [ref=e9] [cursor=pointer]:
+          - /url: "#contacts"
+  - main [ref=e10]:
+    - generic [ref=e13]:
+      - paragraph [ref=e14]: Веб-студия
+      - heading "Kos-Ko" [level=1] [ref=e15]
+      - paragraph [ref=e16]: Разрабатываем сайты и веб-приложения, которые решают задачи бизнеса. Без лишнего. Только результат.
+      - generic [ref=e17]:
+        - link "Смотреть кейсы" [ref=e18] [cursor=pointer]:
+          - /url: "#cases"
+        - link "Обсудить проект" [ref=e19] [cursor=pointer]:
+          - /url: "#contacts"
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - paragraph [ref=e24]: О компании
+        - heading "Создаём цифровые продукты для бизнеса" [level=2] [ref=e25]
+      - generic [ref=e26]:
+        - paragraph [ref=e27]: Kos-Ko — команда разработчиков и дизайнеров, которая создаёт сайты и веб-приложения для бизнеса. Мы делаем акцент на чистом коде, продуманном интерфейсе и измеримом результате для клиента.
+        - paragraph [ref=e28]: Работаем с лендингами, корпоративными сайтами, интернет-магазинами и веб-сервисами — от идеи и прототипа до запуска и поддержки.
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - paragraph [ref=e32]: Услуги
+        - heading "Чем мы занимаемся" [level=2] [ref=e33]
+      - generic [ref=e34]:
+        - generic [ref=e35]: Разработка сайтов
+        - generic [ref=e36]: Лендинги под ключ
+        - generic [ref=e37]: Веб-приложения
+        - generic [ref=e38]: UI/UX-дизайн
+        - generic [ref=e39]: Next.js / React
+        - generic [ref=e40]: Адаптивная вёрстка
+        - generic [ref=e41]: SEO-оптимизация
+        - generic [ref=e42]: Поддержка проектов
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - paragraph [ref=e46]: Кейсы
+        - heading "Наши проекты" [level=2] [ref=e47]
+        - paragraph [ref=e48]: Примеры работ, которые мы реализовали для клиентов. Каждый проект — это решение конкретной бизнес-задачи.
+      - generic [ref=e49]:
+        - article [ref=e50]:
+          - img "Корпоративный сайт Alpha" [ref=e52]
+          - generic [ref=e53]:
+            - heading "Корпоративный сайт Alpha" [level=3] [ref=e54]
+            - paragraph [ref=e55]: Полноценный корпоративный сайт с каталогом услуг, формами заявок и адамин-панелью для управления контентом.
+            - generic [ref=e56]:
+              - generic [ref=e57]: Next.js
+              - generic [ref=e58]: React
+              - generic [ref=e59]: TypeScript
+            - link "Сайт" [ref=e61] [cursor=pointer]:
+              - /url: https://example.com
+              - img [ref=e62]
+              - text: Сайт
+        - article [ref=e64]:
+          - img "Лендинг Beta" [ref=e66]
+          - generic [ref=e67]:
+            - heading "Лендинг Beta" [level=3] [ref=e68]
+            - paragraph [ref=e69]: Высококонверсионный лендинг для запуска продукта. Быстрая загрузка, адаптивная вёрстка и интеграция с CRM.
+            - generic [ref=e70]:
+              - generic [ref=e71]: Landing Page
+              - generic [ref=e72]: Tailwind CSS
+            - link "Сайт" [ref=e74] [cursor=pointer]:
+              - /url: https://example.com
+              - img [ref=e75]
+              - text: Сайт
+        - article [ref=e77]:
+          - img "Веб-приложение Gamma" [ref=e79]
+          - generic [ref=e80]:
+            - heading "Веб-приложение Gamma" [level=3] [ref=e81]
+            - paragraph [ref=e82]: "Внутренний инструмент для автоматизации бизнес-процессов: авторизация, дашборд, роли пользователей и экспорт данных."
+            - generic [ref=e83]:
+              - generic [ref=e84]: React
+              - generic [ref=e85]: Node.js
+              - generic [ref=e86]: PostgreSQL
+            - link "Сайт" [ref=e88] [cursor=pointer]:
+              - /url: https://example.com
+              - img [ref=e89]
+              - text: Сайт
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - paragraph [ref=e95]: Контакты
+        - heading "Обсудить проект" [level=2] [ref=e96]
+        - paragraph [ref=e97]: Расскажите о задаче — мы свяжемся с вами и предложим решение.
+      - generic [ref=e98]:
+        - link "Email hello@kos-ko.ru" [ref=e99] [cursor=pointer]:
+          - /url: mailto:hello@kos-ko.ru
+          - img [ref=e101]
+          - generic [ref=e103]:
+            - paragraph [ref=e104]: Email
+            - paragraph [ref=e105]: hello@kos-ko.ru
+        - link "Telegram kosko_studio" [ref=e106] [cursor=pointer]:
+          - /url: https://t.me/kosko_studio
+          - img [ref=e108]
+          - generic [ref=e110]:
+            - paragraph [ref=e111]: Telegram
+            - paragraph [ref=e112]: kosko_studio
+        - link "GitHub github.com/kos-ko" [ref=e113] [cursor=pointer]:
+          - /url: https://github.com/kos-ko
+          - img [ref=e115]
+          - generic [ref=e117]:
+            - paragraph [ref=e118]: GitHub
+            - paragraph [ref=e119]: github.com/kos-ko
+        - link "Сайт kos-ko.ru" [ref=e120] [cursor=pointer]:
+          - /url: https://kos-ko.ru
+          - img [ref=e122]
+          - generic [ref=e124]:
+            - paragraph [ref=e125]: Сайт
+            - paragraph [ref=e126]: kos-ko.ru
+  - contentinfo [ref=e127]:
+    - paragraph [ref=e129]: © 2026 Kos-Ko. Все права защищены.
+  - alert [ref=e130]

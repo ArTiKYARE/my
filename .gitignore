@@ -40,7 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# deploy
+deploy_output.txt
+
 # uploaded user files (keep demo files)
 /public/uploads/*
 !/public/uploads/demo-*
 !/public/uploads/avatar.svg
+!/public/uploads/logo.svg
+!/public/uploads/safescanget-banner.png
+!/public/uploads/safescanget-logo.ico
+!/public/uploads/remstroyproect-banner.png
+!/public/uploads/remstroyproect-logo.ico
