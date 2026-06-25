@@ -1,0 +1,53 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - heading "Kos-Ko — Админ-панель" [level=1] [ref=e5]
+        - generic [ref=e6]:
+          - link "Открыть сайт" [ref=e7] [cursor=pointer]:
+            - /url: /
+          - button "Выйти" [ref=e9]
+    - main [ref=e10]:
+      - generic [ref=e11]:
+        - button "Проекты" [ref=e12]
+        - button "Профиль" [active] [ref=e13]
+      - generic [ref=e64]:
+        - heading "Редактирование профиля" [level=2] [ref=e65]
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: Название компании
+              - textbox "Название компании" [ref=e70]: Kos-Ko Test
+            - generic [ref=e71]:
+              - generic [ref=e72]: Роль / Слоган
+              - textbox "Например, Веб-студия" [ref=e73]: ���-������
+          - generic [ref=e75]:
+            - generic [ref=e76]: Логотип / Изображение компании
+            - img "Логотип / Изображение компании" [ref=e78]
+            - generic [ref=e79]:
+              - button "Изменить" [ref=e80]
+              - button "Удалить" [ref=e81]
+          - generic [ref=e82]:
+            - generic [ref=e83]: Описание компании
+            - textbox "Расскажите о компании" [ref=e84]: �������� ��������
+          - generic [ref=e85]:
+            - generic [ref=e86]: Услуги / Навыки (через запятую)
+            - textbox "Разработка сайтов, Дизайн, Поддержка" [ref=e87]: ���������� ������, ���-����������
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: Email
+              - textbox "hello@example.com" [ref=e91]: test@kos-ko.ru
+            - generic [ref=e92]:
+              - generic [ref=e93]: Telegram
+              - textbox "https://t.me/username" [ref=e94]
+            - generic [ref=e95]:
+              - generic [ref=e96]: GitHub
+              - textbox "https://github.com/username" [ref=e97]
+            - generic [ref=e98]:
+              - generic [ref=e99]: LinkedIn
+              - textbox "https://linkedin.com/in/username" [ref=e100]
+            - generic [ref=e101]:
+              - generic [ref=e102]: Сайт компании
+              - textbox "https://example.com" [ref=e103]
+          - button "Сохранить профиль" [ref=e104]
+  - alert [ref=e63]
