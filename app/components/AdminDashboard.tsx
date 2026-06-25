@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { logout } from "../lib/auth";
+
 import { Project, Profile } from "../lib/types";
 import AdminProfileForm from "./AdminProfileForm";
 import AdminProjectForm from "./AdminProjectForm";
@@ -41,7 +41,7 @@ export default function AdminDashboard({
             >
               Открыть сайт
             </a>
-            <form action={logout}>
+            <form action="/api/logout" method="POST">
               <button
                 type="submit"
                 className="px-4 py-2 text-sm bg-surface-elevated text-foreground border border-border hover:bg-white/5 transition-colors"

@@ -1,5 +1,3 @@
-import { login } from "@/app/lib/auth";
-
 interface AdminLoginPageProps {
   searchParams: Promise<{ error?: string }>;
 }
@@ -27,7 +25,7 @@ export default async function AdminLoginPage({
           </div>
         )}
 
-        <form action={login} className="space-y-5">
+        <form action="/api/login" method="POST" className="space-y-5">
           <div>
             <label
               htmlFor="password"
