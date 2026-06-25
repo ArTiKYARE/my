@@ -10,6 +10,10 @@ function getAdminPassword(): string {
   return password;
 }
 
+function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "https://kos-ko.ru";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
     const adminPassword = getAdminPassword();
 
     if (password !== adminPassword) {
-      return NextResponse.redirect(new URL("/admin/login?error=invalid", request.url));
+      return NextResponse.redirect(new URL("/admin/login?error=invalid", getSiteUrl()));
     }
 
     const token = crypto
@@ -34,8 +38,8 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return NextResponse.redirect(new URL("/admin", getSiteUrl()));
   } catch {
-    return NextResponse.redirect(new URL("/admin/login?error=invalid", request.url));
+    return NextResponse.redirect(new URL("/admin/login?error=invalid", getSiteUrl()));
   }
 }
