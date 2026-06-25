@@ -21,9 +21,9 @@ export default function Header() {
           <Image
             src="/logo-light.png"
             alt="Kos-Ko"
-            width={144}
-            height={48}
-            className="h-9 w-auto"
+            width={180}
+            height={60}
+            className="h-12 w-auto"
             priority
           />
         </Link>
