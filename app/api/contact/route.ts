@@ -13,8 +13,31 @@ interface Lead {
   createdAt: string;
 }
 
+function corsResponse(body: unknown, init?: ResponseInit) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: {
+      ...(init?.headers || {}),
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
+
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -26,14 +49,14 @@ export async function POST(request: NextRequest) {
     const description = String(formData.get("description") || "").trim();
 
     if (!name || !contact) {
-      return NextResponse.json(
+      return corsResponse(
         { error: "Укажите имя и способ связи" },
         { status: 400 }
       );
     }
 
     if (name.length > 100 || contact.length > 100 || description.length > 2000) {
-      return NextResponse.json(
+      return corsResponse(
         { error: "Одно из полей слишком длинное" },
         { status: 400 }
       );
@@ -60,10 +83,10 @@ export async function POST(request: NextRequest) {
     await fs.mkdir(path.dirname(LEADS_FILE), { recursive: true });
     await fs.writeFile(LEADS_FILE, JSON.stringify(leads, null, 2));
 
-    return NextResponse.json({ success: true, id: lead.id });
+    return corsResponse({ success: true, id: lead.id });
   } catch (error) {
     console.error("Contact form error:", error);
-    return NextResponse.json(
+    return corsResponse(
       { error: "Не удалось отправить заявку" },
       { status: 500 }
     );
