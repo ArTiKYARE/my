@@ -54,3 +54,6 @@ server-profile.json
 !/public/uploads/safescanget-logo.ico
 !/public/uploads/remstroyproect-banner.png
 !/public/uploads/remstroyproect-logo.ico
+!/public/uploads/logo.jpg
+!/public/uploads/favicon.jpg
+!/app/icon.jpg

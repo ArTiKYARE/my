@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kos-Ko — Разработка сайтов и веб-приложений",
   description: "Kos-Ko — веб-студия, которая проектирует и разрабатывает современные сайты, лендинги и веб-приложения для бизнеса.",
+  icons: {
+    icon: "/uploads/favicon.jpg",
+    apple: "/uploads/favicon.jpg",
+  },
 };
 
 export default function RootLayout({
