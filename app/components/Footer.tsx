@@ -8,6 +8,7 @@ const navLinks = [
   { label: "О студии", href: "/about" },
   { label: "Услуги", href: "/#services" },
   { label: "Кейсы", href: "/#cases" },
+  { label: "Блог", href: "/blog" },
   { label: "Контакты", href: "/#contacts" },
 ];
 

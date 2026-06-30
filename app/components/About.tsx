@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Profile } from "../lib/types";
+import AnimatedCounter from "./AnimatedCounter";
+import ProcessTimeline from "./ProcessTimeline";
 
 interface AboutProps {
   profile: Profile;
@@ -21,10 +23,12 @@ export default function About({ profile }: AboutProps) {
             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-6">
               Создаём цифровые продукты для бизнеса
             </h2>
-            <div className="flex flex-wrap gap-6 mb-8">
+            <div className="flex flex-wrap gap-8 mb-8">
               {stats.map((stat) => (
                 <div key={stat.label}>
-                  <p className="text-2xl font-semibold text-brand">{stat.value}</p>
+                  <p className="text-3xl md:text-4xl font-semibold text-brand">
+                    <AnimatedCounter value={stat.value} />
+                  </p>
                   <p className="text-sm text-muted">{stat.label}</p>
                 </div>
               ))}
@@ -38,6 +42,8 @@ export default function About({ profile }: AboutProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             </Link>
+
+            <ProcessTimeline />
           </div>
 
           <div className="text-lg text-muted leading-relaxed space-y-6">

@@ -10,6 +10,17 @@ export interface Project {
   createdAt: string;
 }
 
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover?: string;
+  tags: string[];
+  publishedAt: string;
+}
+
 export interface Contacts {
   email?: string;
   phone?: string;

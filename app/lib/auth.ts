@@ -3,8 +3,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import crypto from "crypto";
+import * as speakeasy from "speakeasy";
 
 const COOKIE_NAME = "admin_session";
+const ADMIN_PATH = "/dashboard";
 
 function getAdminPassword(): string {
   const password = process.env.ADMIN_PASSWORD;
@@ -16,20 +18,45 @@ function getAdminPassword(): string {
   return password;
 }
 
+function getAdminUsername(): string {
+  return process.env.ADMIN_USERNAME || "admin";
+}
+
+function getTotpSecret(): string | undefined {
+  return process.env.ADMIN_TOTP_SECRET;
+}
+
+function generateToken(password: string) {
+  return crypto.createHmac("sha256", password).update("admin").digest("hex");
+}
+
 export async function login(formData: FormData) {
   "use server";
-  const password = formData.get("password") as string;
-  const adminPassword = getAdminPassword();
+  const username = (formData.get("username") as string) || "";
+  const password = (formData.get("password") as string) || "";
+  const totpCode = (formData.get("totp") as string) || "";
 
-  if (password !== adminPassword) {
-    redirect("/admin/login?error=invalid");
+  const adminUsername = getAdminUsername();
+  const adminPassword = getAdminPassword();
+  const totpSecret = getTotpSecret();
+
+  if (username !== adminUsername || password !== adminPassword) {
+    redirect(`${ADMIN_PATH}/login?error=invalid`);
   }
 
-  const token = crypto
-    .createHmac("sha256", adminPassword)
-    .update("admin")
-    .digest("hex");
+  if (totpSecret) {
+    const verified = speakeasy.totp.verify({
+      secret: totpSecret,
+      encoding: "base32",
+      token: totpCode,
+      window: 1,
+    });
+    if (!verified) {
+      redirect(`${ADMIN_PATH}/login?error=totp`);
+    }
+  }
 
+  const token = generateToken(adminPassword);
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -39,14 +66,14 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 дней
   });
 
-  redirect("/admin");
+  redirect(ADMIN_PATH);
 }
 
 export async function logout() {
   "use server";
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
-  redirect("/admin/login");
+  redirect(`${ADMIN_PATH}/login`);
 }
 
 export async function isAuthenticated(): Promise<boolean> {
@@ -57,11 +84,7 @@ export async function isAuthenticated(): Promise<boolean> {
 
     if (!token) return false;
 
-    const expected = crypto
-      .createHmac("sha256", adminPassword)
-      .update("admin")
-      .digest("hex");
-
+    const expected = generateToken(adminPassword);
     return token === expected;
   } catch {
     return false;
@@ -71,6 +94,7 @@ export async function isAuthenticated(): Promise<boolean> {
 export async function requireAuth() {
   const authenticated = await isAuthenticated();
   if (!authenticated) {
-    redirect("/admin/login");
+    redirect(`${ADMIN_PATH}/login`);
   }
 }
+

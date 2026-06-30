@@ -3,28 +3,38 @@
 import { useState } from "react";
 import Image from "next/image";
 
-import { Project, Profile } from "../lib/types";
+import { Project, Profile, Post } from "../lib/types";
 import AdminProfileForm from "./AdminProfileForm";
 import AdminProjectForm from "./AdminProjectForm";
+import AdminPostForm from "./AdminPostForm";
 import AdminLeads from "./AdminLeads";
 
-type Tab = "profile" | "projects" | "leads";
+type Tab = "leads" | "projects" | "posts" | "profile";
 
 interface AdminDashboardProps {
   profile: Profile;
   projects: Project[];
+  posts: Post[];
 }
 
 export default function AdminDashboard({
   profile,
   projects: initialProjects,
+  posts: initialPosts,
 }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>("leads");
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [projects] = useState(initialProjects);
+  const [posts] = useState(initialPosts);
 
   function handleProjectSaved() {
     setEditingProject(null);
+    window.location.reload();
+  }
+
+  function handlePostSaved() {
+    setEditingPost(null);
     window.location.reload();
   }
 
@@ -56,13 +66,14 @@ export default function AdminDashboard({
 
       <main className="container-main py-8 px-4 md:px-6">
         {/* Tabs */}
-        <div className="flex gap-0 mb-8 border border-border w-fit">
+        <div className="flex flex-wrap gap-0 mb-8 border border-border w-fit">
           <button
             onClick={() => {
               setActiveTab("leads");
               setEditingProject(null);
+              setEditingPost(null);
             }}
-            className={`px-6 py-2.5 text-sm font-medium transition-colors ${
+            className={`px-5 py-2.5 text-sm font-medium transition-colors ${
               activeTab === "leads"
                 ? "bg-foreground text-background"
                 : "text-muted hover:text-foreground"
@@ -74,8 +85,9 @@ export default function AdminDashboard({
             onClick={() => {
               setActiveTab("projects");
               setEditingProject(null);
+              setEditingPost(null);
             }}
-            className={`px-6 py-2.5 text-sm font-medium transition-colors border-l border-border ${
+            className={`px-5 py-2.5 text-sm font-medium transition-colors border-l border-border ${
               activeTab === "projects"
                 ? "bg-foreground text-background"
                 : "text-muted hover:text-foreground"
@@ -85,10 +97,25 @@ export default function AdminDashboard({
           </button>
           <button
             onClick={() => {
+              setActiveTab("posts");
+              setEditingProject(null);
+              setEditingPost(null);
+            }}
+            className={`px-5 py-2.5 text-sm font-medium transition-colors border-l border-border ${
+              activeTab === "posts"
+                ? "bg-foreground text-background"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Блог
+          </button>
+          <button
+            onClick={() => {
               setActiveTab("profile");
               setEditingProject(null);
+              setEditingPost(null);
             }}
-            className={`px-6 py-2.5 text-sm font-medium transition-colors border-l border-border ${
+            className={`px-5 py-2.5 text-sm font-medium transition-colors border-l border-border ${
               activeTab === "profile"
                 ? "bg-foreground text-background"
                 : "text-muted hover:text-foreground"
@@ -163,6 +190,68 @@ export default function AdminDashboard({
                 </div>
               ) : (
                 <p className="text-muted">Проекты ещё не добавлены.</p>
+              )}
+            </section>
+          </div>
+        )}
+
+        {activeTab === "posts" && (
+          <div className="space-y-8">
+            {/* Post Form */}
+            <section className="panel p-6 md:p-8">
+              <h2 className="text-2xl font-semibold mb-6">
+                {editingPost ? "Редактирование публикации" : "Новая публикация"}
+              </h2>
+              <AdminPostForm
+                post={editingPost || undefined}
+                onCancel={
+                  editingPost ? () => setEditingPost(null) : undefined
+                }
+                onSaved={handlePostSaved}
+              />
+            </section>
+
+            {/* Posts List */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">Все публикации</h2>
+              {posts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {posts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="flex gap-4 p-4 panel card-hover"
+                    >
+                      <div className="relative w-16 h-16 overflow-hidden flex-shrink-0 border border-border bg-surface-elevated">
+                        {post.cover ? (
+                          <Image
+                            src={post.cover}
+                            alt={post.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-muted">
+                            —
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{post.title}</h3>
+                        <p className="text-sm text-muted line-clamp-2">
+                          {post.excerpt}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setEditingPost(post)}
+                        className="self-center px-4 py-2 text-sm font-medium bg-surface-elevated border border-border hover:bg-white/5 transition-colors"
+                      >
+                        Редактировать
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted">Публикации ещё не добавлены.</p>
               )}
             </section>
           </div>

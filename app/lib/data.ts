@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { Project, Profile, Lead, LeadStatus } from "./types";
+import { Project, Profile, Lead, LeadStatus, Post } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
@@ -19,7 +19,7 @@ async function ensureDataDir() {
   }
 }
 
-async function readJsonFile<T>(filePath: string, defaultValue: T): Promise<T> {
+export async function readJsonFile<T>(filePath: string, defaultValue: T): Promise<T> {
   try {
     const content = await fs.readFile(filePath, "utf-8");
     return JSON.parse(content) as T;
@@ -175,4 +175,87 @@ export async function updateLeadStatus(
   leads[index] = { ...leads[index], status };
   await writeJsonFile(LEADS_FILE, leads);
   return leads[index];
+}
+const POSTS_FILE = path.join(DATA_DIR, "posts.json");
+
+export async function getPosts(): Promise<Post[]> {
+  const posts = await readJsonFile<Post[]>(POSTS_FILE, []);
+  return posts.sort(
+    (a, b) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+}
+
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  const posts = await getPosts();
+  return posts.find((p) => p.slug === slug) || null;
+}
+
+export async function savePost(formData: FormData) {
+  const id = (formData.get("id") as string) || crypto.randomUUID();
+  const title = (formData.get("title") as string).trim();
+  const slug =
+    (formData.get("slug") as string).trim() ||
+    title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const excerpt = (formData.get("excerpt") as string).trim();
+  const content = (formData.get("content") as string).trim();
+  const cover = (formData.get("cover") as string) || "";
+  const tagsRaw = (formData.get("tags") as string) || "";
+
+  if (!title || !slug || !excerpt || !content) {
+    return { error: "Заголовок, slug, анонс и содержание обязательны" };
+  }
+
+  const tags = tagsRaw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const posts = await getPosts();
+  const existingIndex = posts.findIndex((p) => p.id === id);
+
+  const post: Post = {
+    id,
+    title,
+    slug,
+    excerpt,
+    content,
+    cover,
+    tags,
+    publishedAt:
+      existingIndex >= 0
+        ? posts[existingIndex].publishedAt
+        : new Date().toISOString(),
+  };
+
+  if (existingIndex >= 0) {
+    posts[existingIndex] = post;
+  } else {
+    posts.unshift(post);
+  }
+
+  await writeJsonFile(POSTS_FILE, posts);
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${post.slug}`);
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/admin");
+  return { success: true, post };
+}
+
+export async function deletePost(formData: FormData) {
+  const id = formData.get("id") as string;
+  if (!id) return { error: "ID публикации не указан" };
+
+  const posts = await getPosts();
+  const filtered = posts.filter((p) => p.id !== id);
+
+  if (filtered.length === posts.length) {
+    return { error: "Публикация не найдена" };
+  }
+
+  await writeJsonFile(POSTS_FILE, filtered);
+  revalidatePath("/blog");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/admin");
+  return { success: true };
 }
