@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Contacts } from "../lib/types";
 
 interface ContactProps {
@@ -88,13 +88,19 @@ export default function Contact({ contacts }: ContactProps) {
     success?: boolean;
     error?: string;
   }>({ pending: false });
+  const formRef = useRef<HTMLFormElement>(null);
+  const submittingRef = useRef(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setState({ pending: true });
 
     try {
-      const formData = new FormData(e.currentTarget);
+      const form = formRef.current || e.currentTarget;
+      const formData = new FormData(form);
       const response = await fetch("/api/contact", {
         method: "POST",
         body: formData,
@@ -114,10 +120,13 @@ export default function Contact({ contacts }: ContactProps) {
         });
       } else {
         setState({ pending: false, success: true });
-        e.currentTarget.reset();
+        form.reset();
       }
-    } catch {
+    } catch (error) {
+      console.error("Contact form submit error:", error);
       setState({ pending: false, error: "Не удалось отправить заявку" });
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -138,7 +147,7 @@ export default function Contact({ contacts }: ContactProps) {
               Расскажите о задаче — мы свяжемся с вами и предложим решение.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">

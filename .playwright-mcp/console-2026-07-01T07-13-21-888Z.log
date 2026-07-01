@@ -1,0 +1,2 @@
+[  292707ms] [LOG] status 200 ok true text {"success":true,"id":"1782890292577-ttiyip","emailSent":true} @ :7
+[  374800ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://kos-ko.ru/api/contact:0
