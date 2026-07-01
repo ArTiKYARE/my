@@ -40,8 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# deploy
+# deploy & debug artifacts
 deploy_output.txt
+.playwright-mcp
 cookies.txt
 server-profile.json
 

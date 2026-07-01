@@ -1,3 +1,0 @@
-[     117ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://kos-ko.ru/admin/login:0
-[   14228ms] Error: An unexpected response was received from the server.
-    at w (https://kos-ko.ru/_next/static/chunks/07694pm6o3mg7.js:2:743)
