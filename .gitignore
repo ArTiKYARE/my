@@ -43,6 +43,11 @@ next-env.d.ts
 # deploy & debug artifacts
 deploy_output.txt
 .playwright-mcp
+email_preview.html
+email_check.html
+leads_server.json
+leads_check.json
+lead_check.txt
 cookies.txt
 server-profile.json
 
