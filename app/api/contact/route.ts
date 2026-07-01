@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
+import { sendLeadNotification } from "../../lib/email";
 
 const LEADS_FILE = path.join(process.cwd(), "data", "leads.json");
 
@@ -83,7 +84,13 @@ export async function POST(request: NextRequest) {
     await fs.mkdir(path.dirname(LEADS_FILE), { recursive: true });
     await fs.writeFile(LEADS_FILE, JSON.stringify(leads, null, 2));
 
-    return corsResponse({ success: true, id: lead.id });
+    // Отправляем уведомление на почту, но не блокируем успешный ответ
+    const emailSent = await sendLeadNotification(lead);
+    if (!emailSent) {
+      console.error(`Email notification failed for lead ${lead.id}`);
+    }
+
+    return corsResponse({ success: true, id: lead.id, emailSent });
   } catch (error) {
     console.error("Contact form error:", error);
     return corsResponse(
