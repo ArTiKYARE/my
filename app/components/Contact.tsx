@@ -101,9 +101,16 @@ export default function Contact({ contacts }: ContactProps) {
     try {
       const form = formRef.current || e.currentTarget;
       const formData = new FormData(form);
+      const payload = {
+        name: String(formData.get("name") || "").trim(),
+        contact: String(formData.get("contact") || "").trim(),
+        description: String(formData.get("description") || "").trim(),
+      };
+
       const response = await fetch("/api/contact", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       let result: { error?: string; success?: boolean } = {};

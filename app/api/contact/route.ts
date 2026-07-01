@@ -14,6 +14,12 @@ interface Lead {
   createdAt: string;
 }
 
+interface ContactPayload {
+  name?: string;
+  contact?: string;
+  description?: string;
+}
+
 function corsResponse(body: unknown, init?: ResponseInit) {
   return NextResponse.json(body, {
     ...init,
@@ -43,11 +49,11 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
+    const body: ContactPayload = await request.json();
 
-    const name = String(formData.get("name") || "").trim();
-    const contact = String(formData.get("contact") || "").trim();
-    const description = String(formData.get("description") || "").trim();
+    const name = String(body.name || "").trim();
+    const contact = String(body.contact || "").trim();
+    const description = String(body.description || "").trim();
 
     if (!name || !contact) {
       return corsResponse(
@@ -84,7 +90,6 @@ export async function POST(request: NextRequest) {
     await fs.mkdir(path.dirname(LEADS_FILE), { recursive: true });
     await fs.writeFile(LEADS_FILE, JSON.stringify(leads, null, 2));
 
-    // Отправляем уведомление на почту, но не блокируем успешный ответ
     const emailSent = await sendLeadNotification(lead);
     if (!emailSent) {
       console.error(`Email notification failed for lead ${lead.id}`);
