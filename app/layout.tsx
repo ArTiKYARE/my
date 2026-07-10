@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import JsonLd from "./components/JsonLd";
 import YandexMetrika from "./components/YandexMetrika";
+import SmoothScroll from "./components/SmoothScroll";
+import AmbientBackground from "./components/AmbientBackground";
+import MouseSpotlight from "./components/MouseSpotlight";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,6 +74,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <SmoothScroll />
+        <AmbientBackground />
+        <MouseSpotlight />
         <JsonLd />
         {children}
         <YandexMetrika />

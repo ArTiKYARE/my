@@ -8,6 +8,7 @@ import Projects from "./components/Projects";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import StickyCTA from "./components/StickyCTA";
+import ScrollReveal from "./components/ScrollReveal";
 import { getProfile, getProjects } from "./lib/data";
 
 export default async function Home() {
@@ -21,10 +22,18 @@ export default async function Home() {
       <Header />
       <main className="flex-1">
         <Hero />
-        <About profile={profile} />
-        <Skills skills={profile.skills} />
-        <Projects projects={projects} />
-        <Contact contacts={profile.contacts} />
+        <ScrollReveal>
+          <About profile={profile} />
+        </ScrollReveal>
+        <ScrollReveal delay={100}>
+          <Skills skills={profile.skills} />
+        </ScrollReveal>
+        <ScrollReveal delay={100}>
+          <Projects projects={projects} />
+        </ScrollReveal>
+        <ScrollReveal delay={100}>
+          <Contact contacts={profile.contacts} />
+        </ScrollReveal>
       </main>
       <Footer name={profile.name} />
       <StickyCTA />
