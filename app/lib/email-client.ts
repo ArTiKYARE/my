@@ -79,12 +79,20 @@ function renderClientEmailHtml(body: string, threadId: string): string {
 </html>`;
 }
 
-export async function sendClientEmail(formData: FormData) {
-  const to = String(formData.get("to") || "").trim();
-  const toName = String(formData.get("toName") || "").trim();
-  const subject = String(formData.get("subject") || "").trim();
-  const body = String(formData.get("body") || "").trim();
-  const threadId = (formData.get("threadId") as string) || crypto.randomUUID();
+interface SendClientEmailData {
+  to: string;
+  toName?: string;
+  subject: string;
+  body: string;
+  threadId?: string;
+}
+
+export async function sendClientEmail(data: SendClientEmailData) {
+  const to = data.to.trim();
+  const toName = (data.toName || "").trim();
+  const subject = data.subject.trim();
+  const body = data.body.trim();
+  const threadId = data.threadId || crypto.randomUUID();
 
   if (!to || !subject || !body) {
     return { error: "Получатель, тема и текст письма обязательны" };

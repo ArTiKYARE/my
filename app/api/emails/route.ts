@@ -30,8 +30,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const formData = await request.formData();
-    const result = await sendClientEmail(formData);
+    const body = await request.json();
+    const result = await sendClientEmail({
+      to: body.to,
+      toName: body.toName,
+      subject: body.subject,
+      body: body.body,
+      threadId: body.threadId,
+    });
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });

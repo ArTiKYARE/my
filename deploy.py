@@ -103,7 +103,7 @@ def update_caddyfile(sftp_client) -> None:
     reverse_proxy {CONTAINER_NAME}:3000
 }}
 """
-        pattern = re.compile(rf"^{re.escape(DOMAIN)}\s*\{{.*?\}}\n?", re.MULTILINE | re.DOTALL)
+        pattern = re.compile(rf"^{re.escape(DOMAIN)}\b.*?\}}\n?", re.MULTILINE | re.DOTALL)
         if pattern.search(content):
             content = pattern.sub(block, content)
         else:
