@@ -4,7 +4,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { Project, Profile, Lead, LeadStatus, Post } from "./types";
+import { Project, Profile, Lead, LeadStatus, Post, EmailThread } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
@@ -258,4 +258,42 @@ export async function deletePost(formData: FormData) {
   revalidatePath("/sitemap.xml");
   revalidatePath("/admin");
   return { success: true };
+}
+
+const EMAIL_THREADS_FILE = path.join(DATA_DIR, "email_threads.json");
+
+export async function getEmailThreads(): Promise<EmailThread[]> {
+  const threads = await readJsonFile<EmailThread[]>(EMAIL_THREADS_FILE, []);
+  return threads.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+}
+
+export async function getEmailThreadById(id: string): Promise<EmailThread | null> {
+  const threads = await getEmailThreads();
+  return threads.find((t) => t.id === id) || null;
+}
+
+export async function saveEmailThread(thread: EmailThread) {
+  const threads = await readJsonFile<EmailThread[]>(EMAIL_THREADS_FILE, []);
+  const index = threads.findIndex((t) => t.id === thread.id);
+  if (index >= 0) {
+    threads[index] = thread;
+  } else {
+    threads.unshift(thread);
+  }
+  await writeJsonFile(EMAIL_THREADS_FILE, threads);
+  return thread;
+}
+
+export async function updateEmailThreadStatus(
+  id: string,
+  status: EmailThread["status"]
+): Promise<EmailThread | null> {
+  const thread = await getEmailThreadById(id);
+  if (!thread) return null;
+  thread.status = status;
+  thread.updatedAt = new Date().toISOString();
+  await saveEmailThread(thread);
+  return thread;
 }

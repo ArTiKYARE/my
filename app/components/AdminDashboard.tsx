@@ -8,8 +8,9 @@ import AdminProfileForm from "./AdminProfileForm";
 import AdminProjectForm from "./AdminProjectForm";
 import AdminPostForm from "./AdminPostForm";
 import AdminLeads from "./AdminLeads";
+import AdminMail from "./AdminMail";
 
-type Tab = "leads" | "projects" | "posts" | "profile";
+type Tab = "leads" | "projects" | "posts" | "mail" | "profile";
 
 interface AdminDashboardProps {
   profile: Profile;
@@ -111,6 +112,20 @@ export default function AdminDashboard({
           </button>
           <button
             onClick={() => {
+              setActiveTab("mail");
+              setEditingProject(null);
+              setEditingPost(null);
+            }}
+            className={`px-5 py-2.5 text-sm font-medium transition-colors border-l border-border ${
+              activeTab === "mail"
+                ? "bg-foreground text-background"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Рассылка
+          </button>
+          <button
+            onClick={() => {
               setActiveTab("profile");
               setEditingProject(null);
               setEditingPost(null);
@@ -131,6 +146,8 @@ export default function AdminDashboard({
             <AdminLeads />
           </section>
         )}
+
+        {activeTab === "mail" && <AdminMail />}
 
         {activeTab === "profile" && (
           <section className="panel p-6 md:p-8">

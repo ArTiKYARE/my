@@ -49,3 +49,23 @@ export interface Profile {
   skills: string[];
   contacts: Contacts;
 }
+
+export interface EmailMessage {
+  id: string;
+  from: "me" | "client";
+  body: string;
+  html?: string;
+  createdAt: string;
+}
+
+export interface EmailThread {
+  id: string;
+  to: string;
+  toName?: string;
+  subject: string;
+  messages: EmailMessage[];
+  status: "sent" | "replied" | "closed";
+  createdAt: string;
+  updatedAt: string;
+  messageId: string;
+}
