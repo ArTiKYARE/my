@@ -56,6 +56,7 @@ export interface EmailMessage {
   body: string;
   html?: string;
   createdAt: string;
+  messageId?: string;
 }
 
 export interface EmailThread {

@@ -168,7 +168,8 @@ export async function checkEmailReplies(): Promise<{
     const threads = await getEmailThreads();
     if (threads.length === 0) return { success: true, newReplies: 0 };
 
-    const host = "mail.kos-ko.ru";
+    const host = getEnv("IMAP_HOST") || "mail.kos-ko.ru";
+    const port = Number(getEnv("IMAP_PORT") || "993");
     const user = getEnv("SMTP_USER");
     const pass = getEnv("SMTP_PASS");
     if (!user || !pass) {
@@ -180,7 +181,7 @@ export async function checkEmailReplies(): Promise<{
     const { ImapFlow } = imap;
     const client = new ImapFlow({
       host,
-      port: 993,
+      port,
       secure: true,
       auth: { user, pass },
       logger: false,
@@ -190,11 +191,17 @@ export async function checkEmailReplies(): Promise<{
     await client.mailboxOpen("INBOX", { readOnly: true });
 
     let newReplies = 0;
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - 30);
 
     for (const thread of threads) {
+      const msgId = thread.messageId;
       const searchResult = await client.search({
-        seen: false,
-        header: { "in-reply-to": thread.messageId },
+        since: sinceDate,
+        or: [
+          { header: { "in-reply-to": msgId } },
+          { header: { references: msgId } },
+        ],
       });
 
       if (!searchResult || searchResult.length === 0) continue;
@@ -213,13 +220,15 @@ export async function checkEmailReplies(): Promise<{
           (parsed.html ? parsed.html.replace(/<[^>]+>/g, " ") : "");
         if (!replyBody.trim()) continue;
 
+        const replyMessageId = parsed.messageId || undefined;
+        const replyDate = parsed.date || new Date();
         const alreadyExists = thread.messages.some(
           (m) =>
             m.from === "client" &&
-            Math.abs(
-              new Date(m.createdAt).getTime() -
-                (parsed.date?.getTime() || Date.now())
-            ) < 60000
+            ((replyMessageId && m.messageId === replyMessageId) ||
+              Math.abs(
+                new Date(m.createdAt).getTime() - replyDate.getTime()
+              ) < 60000)
         );
         if (alreadyExists) continue;
 
@@ -228,7 +237,8 @@ export async function checkEmailReplies(): Promise<{
           from: "client",
           body: replyBody.trim(),
           html: parsed.html || undefined,
-          createdAt: parsed.date?.toISOString() || new Date().toISOString(),
+          createdAt: replyDate.toISOString(),
+          messageId: replyMessageId,
         });
         thread.status = "replied";
         thread.updatedAt = new Date().toISOString();
@@ -237,18 +247,8 @@ export async function checkEmailReplies(): Promise<{
     }
 
     if (newReplies > 0) {
-      const threadsToSave = await getEmailThreads();
       for (const thread of threads) {
-        const idx = threadsToSave.findIndex((t) => t.id === thread.id);
-        if (idx >= 0) {
-          threadsToSave[idx] = thread;
-        }
-      }
-      // save via saveEmailThread for each updated thread
-      for (const thread of threads) {
-        if (thread.status === "replied") {
-          await saveEmailThread(thread);
-        }
+        await saveEmailThread(thread);
       }
     }
 

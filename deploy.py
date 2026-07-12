@@ -103,11 +103,14 @@ def update_caddyfile(sftp_client) -> None:
     reverse_proxy {CONTAINER_NAME}:3000
 }}
 """
-        pattern = re.compile(rf"^{re.escape(DOMAIN)}\b.*?\}}\n?", re.MULTILINE | re.DOTALL)
-        if pattern.search(content):
-            content = pattern.sub(block, content)
+        # Если блок для домена уже есть — не трогаем, чтобы не повредить общий Caddyfile
+        if re.search(rf"^{re.escape(DOMAIN)}\b", content, re.MULTILINE):
+            print(f"Domain {DOMAIN} already present in Caddyfile, skipping update.")
         else:
             content = content.rstrip("\n") + "\n\n" + block
+            local_path.write_text(content, encoding="utf-8")
+            sftp_client.put(str(local_path), REMOTE_CADDYFILE_PATH)
+            return
 
         local_path.write_text(content, encoding="utf-8")
         sftp_client.put(str(local_path), REMOTE_CADDYFILE_PATH)

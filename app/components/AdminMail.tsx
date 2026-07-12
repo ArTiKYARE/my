@@ -59,11 +59,28 @@ export default function AdminMail() {
   const [templateKey, setTemplateKey] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastReplyCountRef = useRef(0);
+  const audioUnlockedRef = useRef(false);
 
   const repliedCount = threads.filter((t) => t.status === "replied").length;
 
   useEffect(() => {
     audioRef.current = new Audio("/sounds/notification.mp3");
+    const unlock = () => {
+      audioUnlockedRef.current = true;
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+    window.addEventListener("click", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
   }, []);
 
   async function loadThreads() {
@@ -88,7 +105,7 @@ export default function AdminMail() {
       const data = await res.json();
       if (data.success && data.newReplies > 0) {
         await loadThreads();
-        if (audioRef.current) {
+        if (audioRef.current && audioUnlockedRef.current) {
           audioRef.current.currentTime = 0;
           audioRef.current.play().catch(() => {});
         }
@@ -112,7 +129,7 @@ export default function AdminMail() {
   // Play sound when replied threads count increases
   useEffect(() => {
     if (lastReplyCountRef.current > 0 && repliedCount > lastReplyCountRef.current) {
-      if (audioRef.current) {
+      if (audioRef.current && audioUnlockedRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
       }
@@ -140,8 +157,20 @@ export default function AdminMail() {
     setState({});
 
     const formData = new FormData(e.currentTarget);
+    const payload = {
+      to: String(formData.get("to") || "").trim(),
+      toName: String(formData.get("toName") || "").trim(),
+      subject: String(formData.get("subject") || "").trim(),
+      body: String(formData.get("body") || "").trim(),
+      threadId: String(formData.get("threadId") || "").trim() || undefined,
+    };
+
     try {
-      const res = await fetch("/api/emails", { method: "POST", body: formData });
+      const res = await fetch("/api/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json();
       if (!res.ok || data.error) {
         setState({ error: data.error || "Ошибка отправки" });
