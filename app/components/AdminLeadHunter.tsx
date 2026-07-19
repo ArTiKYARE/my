@@ -739,6 +739,19 @@ export default function AdminLeadHunter() {
           </div>
         )}
 
+        {/* Empty state */}
+        {!job && leads.length === 0 && (
+          <div className="panel p-10 text-center">
+            <p className="text-muted">
+              Найдите компании без сайта или с устаревшим сайтом — укажите
+              город и ниши, затем запустите поиск.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Results — full width below the form/progress grid */}
+      <div className="space-y-6 min-w-0 xl:col-span-full">
         {/* Stats */}
         {leads.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -984,15 +997,6 @@ export default function AdminLeadHunter() {
           </div>
         )}
 
-        {/* Empty state */}
-        {!job && leads.length === 0 && favorites.length === 0 && (
-          <div className="panel p-10 text-center">
-            <p className="text-muted">
-              Найдите компании без сайта или с устаревшим сайтом — укажите
-              город и ниши, затем запустите поиск.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Message dialog */}

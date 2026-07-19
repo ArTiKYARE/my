@@ -251,7 +251,9 @@ export default function AdminDashboard({
 
       {/* Content */}
       <main className="md:ml-64 p-6 md:p-10">
-        <div className="max-w-6xl">
+        <div
+          className={activeTab === "hunt" ? "max-w-[1600px]" : "max-w-6xl"}
+        >
           {activeTab === "leads" && (
             <section>
               <SectionHeader label="Управление" title="Заявки с сайта" />
