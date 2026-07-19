@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat curl
 
 COPY package.json package-lock.json ./
 RUN npm ci
