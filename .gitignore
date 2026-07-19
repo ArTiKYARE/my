@@ -65,3 +65,10 @@ server-profile.json
 !/app/icon.jpg
 cases-preview.png
 Caddyfile.remote
+
+# Runtime data (server-side state, not for git)
+data/lead_favorites.json
+data/login_attempts.json
+data/login_logs.json
+data/leads.json
+data/email_threads.json
