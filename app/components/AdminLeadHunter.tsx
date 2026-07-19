@@ -62,6 +62,32 @@ interface MessageDialog {
 
 type LeadFilter = "all" | "hot" | "warm" | "nosite" | "fav";
 
+type HuntStatus = "new" | "contacted" | "replied" | "agreed" | "rejected";
+
+const leadStatusOptions: { id: HuntStatus; label: string }[] = [
+  { id: "new", label: "Новый" },
+  { id: "contacted", label: "Написали" },
+  { id: "replied", label: "Ответили" },
+  { id: "agreed", label: "Согласен" },
+  { id: "rejected", label: "Отказ" },
+];
+
+const leadStatusDotClass: Record<HuntStatus, string> = {
+  new: "bg-muted",
+  contacted: "bg-accent",
+  replied: "bg-amber-400",
+  agreed: "bg-emerald-400",
+  rejected: "bg-red-400",
+};
+
+const leadStatusTextClass: Record<HuntStatus, string> = {
+  new: "text-muted",
+  contacted: "text-accent",
+  replied: "text-amber-400",
+  agreed: "text-emerald-400",
+  rejected: "text-red-400",
+};
+
 const SENDER_STORAGE_KEY = "leadhunter_sender";
 
 const quickNiches = [
@@ -216,6 +242,13 @@ export default function AdminLeadHunter() {
     [favorites]
   );
 
+  // Lead statuses
+  const [statuses, setStatuses] = useState<Record<string, HuntStatus>>({});
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
+  const statusNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
   // Load sender profile from localStorage
   useEffect(() => {
     try {
@@ -230,6 +263,8 @@ export default function AdminLeadHunter() {
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (statusNoticeTimeoutRef.current)
+        clearTimeout(statusNoticeTimeoutRef.current);
     };
   }, []);
 
@@ -259,6 +294,51 @@ export default function AdminLeadHunter() {
         // избранное недоступно — работаем без него
       });
   }, []);
+
+  // Load lead statuses on mount
+  useEffect(() => {
+    fetch("/api/leadsearch/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.statuses) setStatuses(data.statuses);
+      })
+      .catch(() => {
+        // статусы недоступны — показываем «Новый» по умолчанию
+      });
+  }, []);
+
+  async function updateLeadStatus(lead: HuntLead, status: HuntStatus) {
+    const key = leadKey(lead);
+    const prev = statuses;
+    // Оптимистичное обновление
+    setStatuses({ ...statuses, [key]: status });
+    try {
+      const response = await fetch("/api/leadsearch/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, status, lead }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось обновить статус");
+      }
+      if (data.statuses) setStatuses(data.statuses);
+      if (data.addedToLeads) {
+        setStatusNotice(`Лид «${lead.name}» добавлен в Заявки`);
+        if (statusNoticeTimeoutRef.current)
+          clearTimeout(statusNoticeTimeoutRef.current);
+        statusNoticeTimeoutRef.current = setTimeout(
+          () => setStatusNotice(null),
+          4000
+        );
+      }
+    } catch (err) {
+      setStatuses(prev);
+      setError(
+        err instanceof Error ? err.message : "Не удалось обновить статус"
+      );
+    }
+  }
 
   async function toggleFavorite(lead: HuntLead) {
     const key = leadKey(lead);
@@ -602,6 +682,10 @@ export default function AdminLeadHunter() {
               onChange={(e) => setLimit(Number(e.target.value))}
               className="w-full accent-primary"
             />
+            <p className="text-xs text-muted mt-1.5">
+              Яндекс Карты отдают до ~25 результатов на одну нишу — для
+              большего охвата добавьте несколько ниш или источник 2GIS.
+            </p>
           </div>
 
           <div className="space-y-2.5">
@@ -776,6 +860,9 @@ export default function AdminLeadHunter() {
         {/* Results */}
         {(leads.length > 0 || favorites.length > 0) && (
           <div className="space-y-4">
+            {statusNotice && (
+              <p className="text-sm text-emerald-400">{statusNotice}</p>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-0 border border-border w-fit">
                 {filterTabs.map((tab, i) => (
@@ -853,15 +940,20 @@ export default function AdminLeadHunter() {
                     <th className="px-4 py-3 font-medium min-w-[80px]">
                       Оценка
                     </th>
-                    <th className="px-4 py-3 font-medium min-w-[200px]">
+                    <th className="px-4 py-3 font-medium min-w-[180px]">
                       Заметки
+                    </th>
+                    <th className="px-4 py-3 font-medium min-w-[130px]">
+                      Статус
                     </th>
                     <th className="px-4 py-3 font-medium" />
                   </tr>
                 </thead>
                 <tbody>
                   {displayedLeads.map((lead, i) => {
-                    const isFav = favoriteKeys.has(leadKey(lead));
+                    const key = leadKey(lead);
+                    const isFav = favoriteKeys.has(key);
+                    const leadStatus = statuses[key] ?? "new";
                     return (
                       <tr
                         key={`${lead.name}-${i}`}
@@ -945,6 +1037,33 @@ export default function AdminLeadHunter() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 shrink-0 ${leadStatusDotClass[leadStatus]}`}
+                            />
+                            <select
+                              value={leadStatus}
+                              onChange={(e) =>
+                                updateLeadStatus(
+                                  lead,
+                                  e.target.value as HuntStatus
+                                )
+                              }
+                              className={`bg-surface border border-border text-xs px-2 py-1.5 cursor-pointer transition-colors focus:border-primary ${leadStatusTextClass[leadStatus]}`}
+                            >
+                              {leadStatusOptions.map((option) => (
+                                <option
+                                  key={option.id}
+                                  value={option.id}
+                                  className="text-foreground"
+                                >
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => toggleFavorite(lead)}
                               aria-label={
@@ -979,7 +1098,7 @@ export default function AdminLeadHunter() {
                   {displayedLeads.length === 0 && (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-muted"
                       >
                         {filter === "fav"

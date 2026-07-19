@@ -42,7 +42,11 @@ export async function POST(request: NextRequest) {
 
   let limit = Number(body.limit);
   if (!Number.isFinite(limit)) limit = 20;
-  limit = Math.min(50, Math.max(5, Math.round(limit)));
+  // SSR-страница Яндекс Карт отдаёт максимум ~24–25 shortTitle-объектов,
+  // а внутренний API пагинации требует подписанный контекст (воспроизвести
+  // его хрупко — проверено на сервере 2026-07: /maps/api/search стабильно
+  // отвечает 400/отдаёт только свежий csrfToken). Поэтому потолок — 25.
+  limit = Math.min(25, Math.max(5, Math.round(limit)));
 
   const analyze = typeof body.analyze === "boolean" ? body.analyze : true;
   const find_email = typeof body.find_email === "boolean" ? body.find_email : true;
