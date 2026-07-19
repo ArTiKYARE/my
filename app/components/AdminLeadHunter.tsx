@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { leadKey } from "../lib/leadgen/types";
 
 interface HuntLead {
   name: string;
@@ -59,7 +60,7 @@ interface MessageDialog {
   error: string;
 }
 
-type LeadFilter = "all" | "hot" | "warm" | "nosite";
+type LeadFilter = "all" | "hot" | "warm" | "nosite" | "fav";
 
 const SENDER_STORAGE_KEY = "leadhunter_sender";
 
@@ -85,6 +86,66 @@ const filterTabs: { id: LeadFilter; label: string }[] = [
   { id: "warm", label: "Тёплые" },
   { id: "nosite", label: "Без сайта" },
 ];
+
+// Колонки CSV — те же, что в серверном экспорте
+// (app/api/leadsearch/jobs/[id]/export/route.ts)
+const CSV_COLUMNS: [keyof HuntLead, string][] = [
+  ["name", "Название"],
+  ["category", "Рубрика"],
+  ["city", "Город"],
+  ["address", "Адрес"],
+  ["phone", "Телефон"],
+  ["email", "Email"],
+  ["website", "Сайт"],
+  ["site_status", "Статус сайта"],
+  ["site_cms", "CMS/конструктор"],
+  ["score", "Оценка лида"],
+  ["notes", "Примечания"],
+  ["rating", "Рейтинг"],
+  ["reviews", "Отзывов"],
+  ["source", "Источник"],
+  ["source_url", "Ссылка на карточку"],
+];
+
+function csvCell(value: unknown): string {
+  const s = value === null || value === undefined ? "" : String(value);
+  if (/[;"\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function downloadLeadsCsv(list: HuntLead[], filename: string) {
+  const header = CSV_COLUMNS.map(([, label]) => csvCell(label)).join(";");
+  const rows = list.map((lead) =>
+    CSV_COLUMNS.map(([key]) => csvCell(lead[key])).join(";")
+  );
+  // BOM, чтобы Excel корректно открывал кириллицу
+  const csv = "\uFEFF" + [header, ...rows].join("\r\n") + "\r\n";
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-4 h-4"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
 
 function isHot(lead: HuntLead) {
   return lead.score >= 85;
@@ -143,9 +204,17 @@ export default function AdminLeadHunter() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
+  const logStickToBottomRef = useRef(true);
 
   const running =
     starting || job?.status === "pending" || job?.status === "running";
+
+  // Favorites
+  const [favorites, setFavorites] = useState<HuntLead[]>([]);
+  const favoriteKeys = useMemo(
+    () => new Set(favorites.map((lead) => leadKey(lead))),
+    [favorites]
+  );
 
   // Load sender profile from localStorage
   useEffect(() => {
@@ -164,12 +233,61 @@ export default function AdminLeadHunter() {
     };
   }, []);
 
-  // Auto-scroll log to bottom
+  // Auto-scroll log to bottom — only if the user hasn't scrolled up
   useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
+    const el = logRef.current;
+    if (el && logStickToBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [job?.log]);
+
+  function handleLogScroll() {
+    const el = logRef.current;
+    if (!el) return;
+    logStickToBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  }
+
+  // Load favorites on mount
+  useEffect(() => {
+    fetch("/api/leadsearch/favorites")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.leads) setFavorites(data.leads);
+      })
+      .catch(() => {
+        // избранное недоступно — работаем без него
+      });
+  }, []);
+
+  async function toggleFavorite(lead: HuntLead) {
+    const key = leadKey(lead);
+    const isFav = favoriteKeys.has(key);
+    const prev = favorites;
+    // Оптимистичное обновление
+    setFavorites(
+      isFav
+        ? favorites.filter((item) => leadKey(item) !== key)
+        : [lead, ...favorites]
+    );
+    try {
+      const response = await fetch("/api/leadsearch/favorites", {
+        method: isFav ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isFav ? { key } : { lead }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось обновить избранное");
+      }
+      if (data.leads) setFavorites(data.leads);
+    } catch (err) {
+      setFavorites(prev);
+      setError(
+        err instanceof Error ? err.message : "Не удалось обновить избранное"
+      );
+    }
+  }
 
   function updateSender(field: keyof SenderProfile, value: string) {
     setSender((prev) => {
@@ -244,6 +362,7 @@ export default function AdminLeadHunter() {
     setLeads([]);
     setJob(null);
     setFilter("all");
+    logStickToBottomRef.current = true;
 
     try {
       const response = await fetch("/api/leadsearch/search", {
@@ -276,12 +395,15 @@ export default function AdminLeadHunter() {
     }
   }
 
-  const filteredLeads = leads.filter((lead) => {
-    if (filter === "hot") return isHot(lead);
-    if (filter === "warm") return isWarm(lead);
-    if (filter === "nosite") return !lead.website;
-    return true;
-  });
+  const displayedLeads =
+    filter === "fav"
+      ? favorites
+      : leads.filter((lead) => {
+          if (filter === "hot") return isHot(lead);
+          if (filter === "warm") return isWarm(lead);
+          if (filter === "nosite") return !lead.website;
+          return true;
+        });
 
   const stats = {
     total: leads.length,
@@ -355,14 +477,14 @@ export default function AdminLeadHunter() {
   }
 
   async function downloadBatch() {
-    if (filteredLeads.length === 0) return;
+    if (displayedLeads.length === 0) return;
     setError("");
     setBatchLoading(true);
     try {
       const response = await fetch("/api/leadsearch/messages/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leads: filteredLeads, sender }),
+        body: JSON.stringify({ leads: displayedLeads, sender }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -603,6 +725,8 @@ export default function AdminLeadHunter() {
             {job.log.length > 0 && (
               <div
                 ref={logRef}
+                onScroll={handleLogScroll}
+                data-lenis-prevent
                 className="panel-elevated h-40 overflow-y-auto p-3 font-mono text-xs space-y-1"
               >
                 {job.log.map((line, i) => (
@@ -640,10 +764,10 @@ export default function AdminLeadHunter() {
         )}
 
         {/* Results */}
-        {leads.length > 0 && (
+        {(leads.length > 0 || favorites.length > 0) && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex gap-0 border border-border w-fit">
+              <div className="flex flex-wrap gap-0 border border-border w-fit">
                 {filterTabs.map((tab, i) => (
                   <button
                     key={tab.id}
@@ -659,126 +783,198 @@ export default function AdminLeadHunter() {
                     {tab.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => setFilter("fav")}
+                  className={`px-4 py-2 text-sm font-medium transition-colors border-l border-border ${
+                    filter === "fav"
+                      ? "bg-foreground text-background"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  ★ Избранное ({favorites.length})
+                </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {job && (
-                  <a
-                    href={`/api/leadsearch/jobs/${job.id}/export?fmt=csv`}
-                    className="btn-secondary px-4 py-2 text-sm"
+                {filter === "fav" ? (
+                  <button
+                    onClick={() =>
+                      downloadLeadsCsv(displayedLeads, "izbrannoe.csv")
+                    }
+                    disabled={displayedLeads.length === 0}
+                    className="btn-secondary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Скачать CSV
-                  </a>
+                  </button>
+                ) : (
+                  job && (
+                    <a
+                      href={`/api/leadsearch/jobs/${job.id}/export?fmt=csv`}
+                      className="btn-secondary px-4 py-2 text-sm"
+                    >
+                      Скачать CSV
+                    </a>
+                  )
                 )}
                 <button
                   onClick={downloadBatch}
-                  disabled={batchLoading || filteredLeads.length === 0}
+                  disabled={batchLoading || displayedLeads.length === 0}
                   className="btn-secondary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {batchLoading
                     ? "Генерация..."
-                    : `Письма для всех (${filteredLeads.length})`}
+                    : `Письма для всех (${displayedLeads.length})`}
                 </button>
               </div>
             </div>
 
-            <div className="panel overflow-x-auto">
-              <table className="w-full text-sm min-w-[760px]">
+            <div className="panel overflow-x-auto" data-lenis-prevent>
+              <table className="w-full table-auto text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-muted text-xs uppercase tracking-wider">
-                    <th className="px-4 py-3 font-medium">Компания</th>
-                    <th className="px-4 py-3 font-medium">Телефон</th>
-                    <th className="px-4 py-3 font-medium">Сайт</th>
-                    <th className="px-4 py-3 font-medium">Оценка</th>
-                    <th className="px-4 py-3 font-medium">Заметки</th>
+                    <th className="px-4 py-3 font-medium min-w-[180px]">
+                      Компания
+                    </th>
+                    <th className="px-4 py-3 font-medium min-w-[120px]">
+                      Телефон
+                    </th>
+                    <th className="px-4 py-3 font-medium min-w-[140px]">
+                      Сайт
+                    </th>
+                    <th className="px-4 py-3 font-medium min-w-[80px]">
+                      Оценка
+                    </th>
+                    <th className="px-4 py-3 font-medium min-w-[200px]">
+                      Заметки
+                    </th>
                     <th className="px-4 py-3 font-medium" />
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredLeads.map((lead, i) => (
-                    <tr
-                      key={`${lead.name}-${i}`}
-                      className="border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{lead.name}</p>
-                        <p className="text-xs text-muted">{lead.category}</p>
-                        {lead.email && (
-                          <p className="text-xs text-accent">{lead.email}</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {lead.phone || <span className="text-muted">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {lead.website ? (
-                          <span className="inline-flex items-center gap-2">
-                            <a
-                              href={websiteHref(lead.website)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-accent hover:underline"
-                            >
-                              {websiteHost(lead.website)}
-                            </a>
-                            {lead.site_cms && (
-                              <span className="text-xs text-muted border border-border px-1.5 py-0.5">
-                                {lead.site_cms}
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted border border-border px-1.5 py-0.5">
-                            нет сайта
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 text-xs font-medium border ${
-                            isHot(lead)
-                              ? "text-red-400 border-red-400/30 bg-red-400/10"
-                              : isWarm(lead)
-                                ? "text-amber-400 border-amber-400/30 bg-amber-400/10"
-                                : "text-muted border-border bg-surface-elevated"
-                          }`}
-                        >
-                          {lead.score}
-                        </span>
-                        <div className="h-1 bg-surface-elevated w-16 mt-1.5">
-                          <div
-                            className={`h-full ${
+                  {displayedLeads.map((lead, i) => {
+                    const isFav = favoriteKeys.has(leadKey(lead));
+                    return (
+                      <tr
+                        key={`${lead.name}-${i}`}
+                        className="border-b border-border last:border-0 hover:bg-white/[0.02] transition-colors"
+                      >
+                        <td className="px-4 py-3 break-words">
+                          <p className="font-medium break-words">{lead.name}</p>
+                          <p className="text-xs text-muted">{lead.category}</p>
+                          {lead.email && (
+                            <p className="text-xs text-accent break-all">
+                              {lead.email}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 break-words">
+                          {lead.phone ? (
+                            <>
+                              <p>{lead.phone}</p>
+                              {lead.phones && lead.phones !== lead.phone && (
+                                <p className="text-xs text-muted break-words">
+                                  {lead.phones}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {lead.website ? (
+                            <span className="inline-flex flex-wrap items-center gap-2">
+                              <a
+                                href={websiteHref(lead.website)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-accent hover:underline break-all"
+                              >
+                                {websiteHost(lead.website)}
+                              </a>
+                              {lead.site_cms && (
+                                <span className="text-xs text-muted border border-border px-1.5 py-0.5">
+                                  {lead.site_cms}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted border border-border px-1.5 py-0.5">
+                              нет сайта
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-block px-2 py-0.5 text-xs font-medium border ${
                               isHot(lead)
-                                ? "bg-red-400"
+                                ? "text-red-400 border-red-400/30 bg-red-400/10"
                                 : isWarm(lead)
-                                  ? "bg-amber-400"
-                                  : "bg-muted"
+                                  ? "text-amber-400 border-amber-400/30 bg-amber-400/10"
+                                  : "text-muted border-border bg-surface-elevated"
                             }`}
-                            style={{
-                              width: `${Math.min(100, Math.max(0, lead.score))}%`,
-                            }}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted max-w-[220px]">
-                        {lead.notes || "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => openMessage(lead)}
-                          className="btn-secondary px-3 py-1.5 text-xs"
-                        >
-                          Письмо
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredLeads.length === 0 && (
+                          >
+                            {lead.score}
+                          </span>
+                          <div className="h-1 bg-surface-elevated w-16 mt-1.5">
+                            <div
+                              className={`h-full ${
+                                isHot(lead)
+                                  ? "bg-red-400"
+                                  : isWarm(lead)
+                                    ? "bg-amber-400"
+                                    : "bg-muted"
+                              }`}
+                              style={{
+                                width: `${Math.min(100, Math.max(0, lead.score))}%`,
+                              }}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted break-words whitespace-normal">
+                          {lead.notes || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => toggleFavorite(lead)}
+                              aria-label={
+                                isFav
+                                  ? "Убрать из избранного"
+                                  : "В избранное"
+                              }
+                              title={
+                                isFav
+                                  ? "Убрать из избранного"
+                                  : "В избранное"
+                              }
+                              className={`p-1.5 transition-colors ${
+                                isFav
+                                  ? "text-amber-400"
+                                  : "text-muted hover:text-amber-400"
+                              }`}
+                            >
+                              <StarIcon filled={isFav} />
+                            </button>
+                            <button
+                              onClick={() => openMessage(lead)}
+                              className="btn-secondary px-3 py-1.5 text-xs"
+                            >
+                              Письмо
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {displayedLeads.length === 0 && (
                     <tr>
                       <td
                         colSpan={6}
                         className="px-4 py-8 text-center text-muted"
                       >
-                        Нет лидов в этой категории.
+                        {filter === "fav"
+                          ? "В избранном пока пусто."
+                          : "Нет лидов в этой категории."}
                       </td>
                     </tr>
                   )}
@@ -789,7 +985,7 @@ export default function AdminLeadHunter() {
         )}
 
         {/* Empty state */}
-        {!job && leads.length === 0 && (
+        {!job && leads.length === 0 && favorites.length === 0 && (
           <div className="panel p-10 text-center">
             <p className="text-muted">
               Найдите компании без сайта или с устаревшим сайтом — укажите

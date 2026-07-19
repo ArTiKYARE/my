@@ -1,5 +1,8 @@
 // Генератор персональных outreach-писем для лидов.
-// Порт Python leadgen/outreach.py — шаблоны перенесены дословно.
+// Тексты — живое письмо от первого лица, как пишет фрилансер конкретному
+// владельцу бизнеса: конкретика в первом абзаце, одна боль, один мягкий CTA.
+// Два варианта текста на сценарий — выбор детерминирован хешем названия
+// компании, чтобы разным лидам уходили разные формулировки.
 
 import { HuntLead, SenderProfile } from "./types";
 
@@ -11,12 +14,24 @@ export interface GeneratedMessage {
 
 type LeadLike = Partial<HuntLead> & Record<string, unknown>;
 
+type Template = (lead: LeadLike, sender: SenderProfile) => [string, string];
+
 function signature(sender: SenderProfile): string {
-  const lines = ["—"];
+  const lines: string[] = [];
   if (sender.name) lines.push(sender.name);
-  if (sender.portfolio) lines.push(sender.portfolio);
   if (sender.contact) lines.push(sender.contact);
-  return lines.length > 1 ? lines.join("\n") : "";
+  if (sender.portfolio) lines.push(`Портфолио: ${sender.portfolio}`);
+  return lines.join("\n");
+}
+
+/** Детерминированный выбор варианта текста по названию компании. */
+function pickVariant(name: string, count: number): number {
+  let hash = 5381;
+  const s = (name || "").toLowerCase();
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) + hash + s.charCodeAt(i)) >>> 0;
+  }
+  return hash % count;
 }
 
 function host(url: string): string {
@@ -27,8 +42,8 @@ function host(url: string): string {
   }
 }
 
-/** Фраза про рейтинг/отзывы — если есть данные с карт. */
-function socialProof(lead: LeadLike): string {
+/** «у вас уже рейтинг 4.8 и 120 отзывов, но » — если есть данные с карт. */
+function proofPrefix(lead: LeadLike): string {
   const parts: string[] = [];
   if (lead.rating) parts.push(`рейтинг ${lead.rating}`);
   if (lead.reviews) parts.push(`${lead.reviews} отзывов`);
@@ -36,141 +51,239 @@ function socialProof(lead: LeadLike): string {
   return "";
 }
 
-function defaultUsp(category: string): string {
-  const niche = category || "локального бизнеса";
-  return (
-    `Мы делаем сайты для ниши «${niche}»: лендинг за 5–7 дней ` +
-    "с кнопкой звонка, картой и формой заявки."
-  );
+/** «у карточки рейтинг 4.8 и 120 отзывов, » — вставка в середину фразы. */
+function proofComma(lead: LeadLike): string {
+  const parts: string[] = [];
+  if (lead.rating) parts.push(`рейтинг ${lead.rating}`);
+  if (lead.reviews) parts.push(`${lead.reviews} отзывов`);
+  if (parts.length) return `у карточки ${parts.join(" и ")}, `;
+  return "";
 }
 
-function noSite(lead: LeadLike, sender: SenderProfile): [string, string] {
-  const name = lead.name || "ваша компания";
-  const city = lead.city || "вашем городе";
-  const category = lead.category || "услуги";
-  const subject = `${name} — клиенты ищут вас онлайн`;
-  const body = `Здравствуйте!
-
-Нашёл карточку «${name}» на картах (${city}): ${socialProof(lead)}сайта нет.
-При этом клиенты, которые ищут «${category}» рядом с вами, выбирают тех,
-у кого можно посмотреть услуги и цены онлайн перед визитом.
-
-${sender.usp || defaultUsp(category)}
-
-Готов показать 2–3 варианта под ваш бюджет. Ответьте на это письмо —
-пришлю примеры работ.
-
-${signature(sender)}
-
-P.S. Можно начать с простого лендинга — проверите спрос без больших вложений.`;
-  return [subject, body];
+function uspLine(sender: SenderProfile, fallback: string): string {
+  return sender.usp || fallback;
 }
 
-function aggregator(lead: LeadLike, sender: SenderProfile): [string, string] {
-  const name = lead.name || "ваша компания";
-  const category = lead.category || "услуги";
-  const hostName = host(lead.website || "");
-  const subject = `${name}: вместо сайта — чужая страница`;
-  const body = `Здравствуйте!
+// ---------------------------------------------------------------------------
+// no_site — сайта нет вообще
+// ---------------------------------------------------------------------------
 
-Посмотрел карточку «${name}»: ${socialProof(lead)}вместо сайта указана
-автоматическая страница ${hostName}. Она не продаёт: нет ваших цен, фото
-работ и нормальной формы заявки, а часть клиентов уходит к конкурентам
-с того же агрегатора.
+const NO_SITE: Template[] = [
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const subject = `по поводу сайта для «${name}»`;
+    const body = `Здравствуйте!
 
-${sender.usp || defaultUsp(category)}
+Пишу по поводу «${name}» — ${category}, ${city}. Наткнулся на вашу карточку на картах: ${proofPrefix(lead)}сайта в ней нет.
+А человек, который ищет «${category}» рядом, обычно сначала заходит на сайт — посмотреть цены и фото перед звонком. Сейчас он этого сделать не может и уходит к тому, у кого сайт есть.
+${uspLine(sender, "Я делаю простые сайты для локального бизнеса: одна страница с услугами, ценами, кнопкой звонка и формой заявки, запуск примерно за неделю.")}
 
-Сделаем свой сайт, а страницу на агрегаторе оставим как дополнительный
-канал. Показать примеры для «${category}»?
+Могу скинуть пару примеров, как это выглядит в вашей нише — интересно?
 
-${signature(sender)}
+${signature(sender)}`;
+    return [subject, body];
+  },
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const subject = `«${name}» — вопрос про сайт`;
+    const body = `Здравствуйте!
 
-P.S. Свой сайт окупается, когда с него приходит хотя бы 1–2 заявки
-в месяц — обычно это первые недели после запуска.`;
-  return [subject, body];
-}
+Смотрел карточку «${name}» (${category}, ${city}) на картах — ${proofPrefix(lead)}ссылки на сайт там нет.
+Получается, репутация уже есть, а посмотреть услуги и цены перед звонком клиенту негде.
+${uspLine(sender, "Я сам делаю сайты для небольших компаний. Обычно это одна аккуратная страница: услуги, цены, карта, форма заявки — за 5–7 дней.")}
 
-function unreachable(lead: LeadLike, sender: SenderProfile): [string, string] {
-  const name = lead.name || "ваша компания";
-  const hostName = host(lead.website || "сайт");
-  const subject = `Сайт ${hostName} не открывается`;
-  const body = `Здравствуйте!
+Если тема хоть немного на примете — пришлю примеры под вашу нишу, посмотрите на досуге?
 
-Хотел посмотреть сайт «${name}» — ${hostName}, но он не открывается.
-Каждый день простоя — это клиенты, которые нажали на ссылку с карт
-и ушли к конкурентам.
+${signature(sender)}`;
+    return [subject, body];
+  },
+];
 
-Два варианта: помочь быстро поднять текущий сайт или собрать новый
-с нуля под ваши задачи. ${sender.usp}
+// ---------------------------------------------------------------------------
+// aggregator — вместо сайта страница на агрегаторе или соцсеть
+// ---------------------------------------------------------------------------
 
-Ответьте — разберёмся, что выгоднее в вашем случае.
+const AGGREGATOR: Template[] = [
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "");
+    const subject = `по поводу страницы «${name}» на ${hostName}`;
+    const body = `Здравствуйте!
 
-${signature(sender)}
+Зашёл посмотреть «${name}» (${category}, ${city}): ${proofPrefix(lead)}вместо сайта в карточке указана страница на ${hostName}.
+Такие страницы собираются автоматически — без ваших цен, фото работ и нормальной формы заявки. А рядом на той же площадке сидят конкуренты, и часть клиентов уходит к ним.
+${uspLine(sender, `Я делаю сайты для ниши «${category}»: своя страница с ценами и формой, которую вы контролируете. Агрегатор при этом остаётся просто дополнительным каналом.`)}
 
-P.S. Если сайт «временно упал», всё равно стоит проверить хостинг
-и срок домена — терять карточку с отзывами обидно.`;
-  return [subject, body];
-}
+Показать пару примеров для вашей ниши?
 
-function weakSite(lead: LeadLike, sender: SenderProfile): [string, string] {
-  const name = lead.name || "ваша компания";
-  const category = lead.category || "услуги";
-  const hostName = host(lead.website || "ваш сайт");
+${signature(sender)}`;
+    return [subject, body];
+  },
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "");
+    const subject = `вопрос про сайт «${name}»`;
+    const body = `Здравствуйте!
+
+Нашёл «${name}» (${category}, ${city}) через карты — ${proofPrefix(lead)}ссылка ведёт на автоматическую страницу ${hostName}, а не на ваш сайт.
+Понимаю, как так вышло — агрегаторы создают эти страницы сами. Но продают они слабо: ни цен, ни фото, ни заявки, и клиент в один клик переключается на соседа по выдаче.
+${uspLine(sender, "Свой простой сайт это решает: одна страница с услугами, ценами и формой заявки, и вы больше не зависите от чужой площадки.")}
+
+Скинуть пример, как это выглядит для «${category}»?
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+];
+
+// ---------------------------------------------------------------------------
+// unreachable — сайт не открывается
+// ---------------------------------------------------------------------------
+
+const UNREACHABLE: Template[] = [
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "сайт");
+    const subject = `${hostName} не открывается`;
+    const body = `Здравствуйте!
+
+Хотел зайти на сайт «${name}» (${category}, ${city}) — ${hostName}, но он сейчас не открывается.
+Каждый, кто кликает ссылку из карточки на картах, попадает в никуда и уходит дальше. Если это длится не первый день, заявки теряются прямо сейчас.
+${uspLine(sender, "Я занимаюсь сайтами: могу помочь быстро поднять текущий (чаще всего дело в хостинге или домене) или собрать новый с нуля.")}
+
+Подсказать, куда смотреть в первую очередь? Напишите пару слов — сориентирую.
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "сайт");
+    const subject = `у «${name}» сайт не работает?`;
+    const body = `Здравствуйте!
+
+Смотрел «${name}» (${category}, ${city}) на картах — перешёл по ссылке на ${hostName}, а сайт не открывается.
+Может, вы уже в курсе, а может, это случилось только что. Пока он лежит, клиенты с карт уходят к конкурентам — ссылка в карточке-то осталась.
+${uspLine(sender, "Я могу помочь: сначала посмотреть, что случилось (домен, хостинг, сертификат), а дальше — починить или быстро собрать новый.")}
+
+Хотите, гляну, в чём там дело, и напишу, что нашёл?
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+];
+
+// ---------------------------------------------------------------------------
+// weak_site — сайт есть, но с проблемами (конструктор, нет мобильной версии)
+// ---------------------------------------------------------------------------
+
+function weakPain(lead: LeadLike): string {
   const cms = lead.site_cms || "";
   const problems = lead.notes || "есть точки роста";
   const isTaplink = (cms + (lead.website || "")).toLowerCase().includes("taplink");
-  const subject = `${name} — сайт теряет клиентов с телефона`;
-  let pain: string;
   if (isTaplink) {
-    pain =
-      `вместо сайта — мини-лендинг ${cms || "Taplink"}: он не ранжируется ` +
-      "в поиске и выглядит одинаково у всех";
-  } else if (cms && problems.toLowerCase().includes(cms.toLowerCase())) {
-    pain = problems; // notes уже содержат упоминание конструктора
-  } else if (cms) {
-    pain = `сайт на ${cms}: ${problems}`;
-  } else {
-    pain = `у сайта ${problems}`;
+    return (
+      `вместо полноценного сайта — мини-лендинг ${cms || "Taplink"}: он не ранжируется ` +
+      "в поиске и выглядит одинаково у всех"
+    );
   }
-  const body = `Здравствуйте!
-
-Открыл ${hostName} со смартфона: ${pain}.
-Больше половины клиентов ниши «${category}» приходит с телефона —
-и уходит, если страница неудобная.
-
-${sender.usp || "Мы делаем редизайн с фокусом на заявки: мобильная версия, быстрая загрузка, понятный прайс и форма записи."}
-
-Могу бесплатно записать 10-минутный видео-аудит вашего сайта —
-покажу, что улучшить за неделю. Прислать?
-
-${signature(sender)}
-
-P.S. Аудит ни к чему не обязывает — заберёте список правок
-даже если сделаете всё своими силами.`;
-  return [subject, body];
+  if (cms && problems.toLowerCase().includes(cms.toLowerCase())) {
+    return problems; // notes уже содержат упоминание конструктора
+  }
+  if (cms) {
+    return `сайт на ${cms}: ${problems}`;
+  }
+  return problems;
 }
 
-function okSite(lead: LeadLike, sender: SenderProfile): [string, string] {
-  const name = lead.name || "ваша компания";
-  const category = lead.category || "услуги";
-  const subject = `${name}: сайт + заявки «под ключ»`;
-  const body = `Здравствуйте!
+const WEAK_SITE: Template[] = [
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "ваш сайт");
+    const subject = `по поводу сайта «${name}»`;
+    const body = `Здравствуйте!
 
-«${name}» выглядит достойно онлайн — сайт работает. Пишу, потому что
-для ниши «${category}» мы закрываем следующий шаг: не «сайт-визитка»,
-а поток заявок — SEO по услугам, лендинги под акции, онлайн-запись.
+Зашёл на ${hostName} с телефона — смотрел «${name}», ${category}, ${city}. Сразу бросилось в глаза: ${weakPain(lead)}.
+С телефона сейчас приходит больше половины клиентов в нише «${category}» — и если страницей неудобно пользоваться, они уходят, не позвонив.
+${uspLine(sender, "Я делаю редизайн и новые сайты с упором на заявки: мобильная версия, быстрая загрузка, понятный прайс.")}
 
-${sender.usp}
+Могу записать короткий скринкаст, что именно стоит поправить у вас — прислать?
 
-Если с сайта приходит меньше 5–10 заявок в месяц — есть что обсудить.
-Готов показать цифры по похожему проекту, 15 минут по телефону.
+${signature(sender)}`;
+    return [subject, body];
+  },
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const hostName = host(lead.website || "ваш сайт");
+    const subject = `вопрос про ${hostName}`;
+    const body = `Здравствуйте!
 
-${signature(sender)}
+Смотрел сайт «${name}» (${category}, ${city}) со смартфона — ${hostName}. Видно, что сайт живой, но есть момент: ${weakPain(lead)}.
+Из-за таких вещей люди закрывают страницу и звонят следующему в списке — особенно те, кто зашёл с телефона.
+${uspLine(sender, "Я как раз занимаюсь сайтами для локального бизнеса и могу прямо на вашем примере показать, что поправить в первую очередь.")}
 
-P.S. Если всё уже отлично с заявками — просто ответьте «всё ок»,
-больше не побеспокою.`;
-  return [subject, body];
-}
+Интересно, если скину пару скринов с пометками?
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+];
+
+// ---------------------------------------------------------------------------
+// ok_site — сайт нормальный, предлагаем следующий шаг
+// ---------------------------------------------------------------------------
+
+const OK_SITE: Template[] = [
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const subject = `по поводу заявок с сайта «${name}»`;
+    const body = `Здравствуйте!
+
+Посмотрел «${name}» (${category}, ${city}) — ${proofComma(lead)}сайт на месте и выглядит достойно, видно, что онлайном вы занимаетесь.
+Поэтому пишу коротко и по делу: следующий шаг для таких компаний — не «сделать сайт», а получать с него больше заявок: поисковое продвижение по услугам, отдельные страницы под конкретные запросы, онлайн-запись.
+${uspLine(sender, "Я этим и занимаюсь. Если с сайта приходит меньше заявок, чем хотелось бы, — есть о чём поговорить.")}
+
+Удобно будет, если я пришлю пару цифр по похожему проекту?
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+  (lead, sender) => {
+    const name = lead.name || "ваша компания";
+    const city = lead.city || "ваш город";
+    const category = lead.category || "услуги";
+    const subject = `вопрос про сайт «${name}»`;
+    const body = `Здравствуйте!
+
+Зашёл на сайт «${name}» (${category}, ${city}) — выглядит достойно, вопросов к самому сайту нет.
+Пишу по другому поводу: я помогаю компаниям в нише «${category}» получать с сайта больше заявок — продвижение по услугам, отдельные страницы под конкретные запросы, онлайн-запись.
+Обычно разговор начинается с простой проверки: сколько заявок приходит сейчас и где проседает воронка.
+${uspLine(sender, "Если тема откликается — расскажу, что сделали для похожей компании и что из этого вышло.")}
+
+Интересно?
+
+${signature(sender)}`;
+    return [subject, body];
+  },
+];
 
 /** Сгенерировать письмо для лида. */
 export function generateMessage(lead: LeadLike, sender: SenderProfile): GeneratedMessage {
@@ -178,26 +291,27 @@ export function generateMessage(lead: LeadLike, sender: SenderProfile): Generate
   const score = Number(lead.score) || 0;
 
   let scenario: GeneratedMessage["scenario"];
-  let fn: (lead: LeadLike, sender: SenderProfile) => [string, string];
+  let templates: Template[];
 
   if (status === "нет сайта" || (!lead.website && score >= 85)) {
     scenario = "no_site";
-    fn = noSite;
+    templates = NO_SITE;
   } else if (status === "страница на агрегаторе" || status === "только соцсеть") {
     scenario = "aggregator";
-    fn = aggregator;
+    templates = AGGREGATOR;
   } else if (status === "недоступен") {
     scenario = "unreachable";
-    fn = unreachable;
+    templates = UNREACHABLE;
   } else if (status === "конструктор" || status === "есть проблемы" || score >= 50) {
     scenario = "weak_site";
-    fn = weakSite;
+    templates = WEAK_SITE;
   } else {
     scenario = "ok_site";
-    fn = okSite;
+    templates = OK_SITE;
   }
 
-  const [subject, rawBody] = fn(lead, sender);
+  const variant = pickVariant(lead.name || "", templates.length);
+  const [subject, rawBody] = templates[variant](lead, sender);
   // лишние пустые строки (если подпись пустая) убираем
   let body = rawBody;
   while (body.includes("\n\n\n")) {

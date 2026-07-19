@@ -149,7 +149,10 @@ export default function AdminDashboard({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav
+        data-lenis-prevent
+        className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
+      >
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (

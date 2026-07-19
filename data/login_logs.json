@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2026-07-19T15:38:55.052Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  },
+  {
+    "timestamp": "2026-07-19T16:21:19.085Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  },
+  {
+    "timestamp": "2026-07-19T16:22:51.675Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  },
+  {
+    "timestamp": "2026-07-19T16:23:42.797Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  },
+  {
+    "timestamp": "2026-07-19T16:26:30.639Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  },
+  {
+    "timestamp": "2026-07-19T16:27:14.815Z",
+    "ip": "::1",
+    "username": "admin",
+    "success": true
+  }
+]
