@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import { isAuthenticated } from "../lib/auth";
+import { getSession } from "../lib/auth";
 import { getProfile, getProjects, getPosts } from "../lib/data";
 import AdminDashboard from "../components/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const authenticated = await isAuthenticated();
-  if (!authenticated) {
+  const session = await getSession();
+  if (!session) {
     redirect("/dashboard/login");
   }
 
@@ -17,5 +17,12 @@ export default async function AdminPage() {
     getPosts(),
   ]);
 
-  return <AdminDashboard profile={profile} projects={projects} posts={posts} />;
+  return (
+    <AdminDashboard
+      profile={profile}
+      projects={projects}
+      posts={posts}
+      role={session.role}
+    />
+  );
 }

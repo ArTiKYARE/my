@@ -118,6 +118,56 @@ export default function AdminLeads() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("newest");
 
+  // Create lead modal
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+
+  function openCreate() {
+    setNewName("");
+    setNewContact("");
+    setNewDescription("");
+    setCreateError("");
+    setCreateOpen(true);
+  }
+
+  async function createLead() {
+    if (!newName.trim() || !newContact.trim()) {
+      setCreateError("Заполните имя и контакт.");
+      return;
+    }
+    setCreateLoading(true);
+    setCreateError("");
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName.trim(),
+          contact: newContact.trim(),
+          ...(newDescription.trim()
+            ? { description: newDescription.trim() }
+            : {}),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Не удалось создать заявку");
+      }
+      setLeads((prev) => [data.lead, ...prev]);
+      setCreateOpen(false);
+    } catch (err) {
+      setCreateError(
+        err instanceof Error ? err.message : "Не удалось создать заявку"
+      );
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
   async function loadLeads() {
     try {
       setLoading(true);
@@ -313,6 +363,12 @@ export default function AdminLeads() {
             </option>
           ))}
         </select>
+        <button
+          onClick={openCreate}
+          className="btn-primary px-4 py-2 text-sm font-medium ml-auto"
+        >
+          Новая заявка
+        </button>
       </div>
 
       {sortedLeads.length === 0 ? (
@@ -427,7 +483,91 @@ export default function AdminLeads() {
               prev.map((lead) => (lead.id === updated.id ? updated : lead))
             )
           }
+          onDeleted={(id) => {
+            setLeads((prev) => prev.filter((lead) => lead.id !== id));
+            setSelectedId(null);
+          }}
         />
+      )}
+
+      {/* Create lead modal */}
+      {createOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          onClick={() => setCreateOpen(false)}
+        >
+          <div
+            className="panel max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-lg font-semibold">Новая заявка</h3>
+              <button
+                onClick={() => setCreateOpen(false)}
+                aria-label="Закрыть"
+                className="p-1 text-muted hover:text-foreground transition-colors"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Имя *</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Контакт *
+              </label>
+              <input
+                type="text"
+                value={newContact}
+                onChange={(e) => setNewContact(e.target.value)}
+                placeholder="Телефон или email"
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Описание
+              </label>
+              <textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                rows={4}
+                className="input-field resize-none"
+              />
+            </div>
+
+            {createError && (
+              <p className="text-sm text-red-400">{createError}</p>
+            )}
+
+            <button
+              onClick={createLead}
+              disabled={createLoading}
+              className="btn-primary w-full py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {createLoading ? "Создание..." : "Создать"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -438,11 +578,13 @@ function LeadDrawer({
   onClose,
   onStatusChange,
   onSaved,
+  onDeleted,
 }: {
   lead: Lead;
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => void;
   onSaved: (lead: Lead) => void;
+  onDeleted: (id: string) => void;
 }) {
   const [comment, setComment] = useState(lead.comment ?? "");
   const [services, setServices] = useState<string[]>(lead.services ?? []);
@@ -452,6 +594,8 @@ function LeadDrawer({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Contract modal
@@ -606,6 +750,25 @@ function LeadDrawer({
       setError(err instanceof Error ? err.message : "Ошибка сохранения");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteLead() {
+    setDeleting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/leads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: lead.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Ошибка удаления");
+      onDeleted(lead.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка удаления");
+      setConfirmDelete(false);
+      setDeleting(false);
     }
   }
 
@@ -824,13 +987,40 @@ function LeadDrawer({
             )}
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            onClick={save}
-            disabled={saving}
-            className="btn-primary w-full py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "Сохранение..." : saved ? "Сохранено" : "Сохранить"}
-          </button>
+          <div className="flex items-center gap-3">
+            {confirmDelete ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-red-400">Точно удалить?</span>
+                <button
+                  onClick={deleteLead}
+                  disabled={deleting}
+                  className="px-3 py-1.5 text-xs border border-red-400/30 text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50"
+                >
+                  {deleting ? "..." : "Да"}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-3 py-1.5 text-xs text-muted hover:text-foreground transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="px-3 py-1.5 text-xs border border-red-400/30 text-red-400 hover:bg-red-400/10 transition-colors shrink-0"
+              >
+                Удалить
+              </button>
+            )}
+            <button
+              onClick={save}
+              disabled={saving}
+              className="btn-primary flex-1 py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Сохранение..." : saved ? "Сохранено" : "Сохранить"}
+            </button>
+          </div>
         </div>
       </aside>
 

@@ -10,13 +10,15 @@ import AdminPostForm from "./AdminPostForm";
 import AdminLeads from "./AdminLeads";
 import AdminMail from "./AdminMail";
 import AdminLeadHunter from "./AdminLeadHunter";
+import AdminAccounts from "./AdminAccounts";
 
-type Tab = "leads" | "hunt" | "projects" | "posts" | "mail" | "profile";
+type Tab = "leads" | "hunt" | "projects" | "posts" | "mail" | "profile" | "accounts";
 
 interface AdminDashboardProps {
   profile: Profile;
   projects: Project[];
   posts: Post[];
+  role: "admin" | "employee";
 }
 
 interface NavItem {
@@ -100,6 +102,18 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    id: "accounts",
+    label: "Сотрудники",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" {...strokeProps}>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
 ];
 
 function SectionHeader({ label, title }: { label: string; title: string }) {
@@ -115,6 +129,7 @@ export default function AdminDashboard({
   profile,
   projects: initialProjects,
   posts: initialPosts,
+  role,
 }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>("leads");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -153,26 +168,28 @@ export default function AdminDashboard({
         data-lenis-prevent
         className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
       >
-        {navItems.map((item) => {
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => selectTab(item.id)}
-              className={`relative w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-surface-elevated text-foreground"
-                  : "text-muted hover:text-foreground hover:bg-white/5"
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
-              )}
-              {item.icon}
-              {item.label}
-            </button>
-          );
-        })}
+        {navItems
+          .filter((item) => item.id !== "accounts" || role === "admin")
+          .map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => selectTab(item.id)}
+                className={`relative w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-surface-elevated text-foreground"
+                    : "text-muted hover:text-foreground hover:bg-white/5"
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
+                )}
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
       </nav>
 
       {/* Bottom actions */}
@@ -269,6 +286,13 @@ export default function AdminDashboard({
           )}
 
           {activeTab === "mail" && <AdminMail />}
+
+          {activeTab === "accounts" && role === "admin" && (
+            <section>
+              <SectionHeader label="Администрирование" title="Сотрудники" />
+              <AdminAccounts />
+            </section>
+          )}
 
           {activeTab === "profile" && (
             <section>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "../../../lib/auth";
+import { getSession, isAuthenticated } from "../../../lib/auth";
+import { appendActivity } from "../../../lib/activity";
 import {
   addHuntLeadToFunnel,
   getHuntStatuses,
@@ -41,6 +42,13 @@ export async function POST(request: NextRequest) {
     }
 
     const statuses = await setHuntStatus(key, status as HuntLeadStatus);
+
+    const session = await getSession();
+    await appendActivity(
+      session?.username ?? "unknown",
+      "hunt_status",
+      `${key} → ${status}`
+    );
 
     // «Согласен» — переносим лида в основную воронку заявок
     let addedToLeads: boolean | undefined;

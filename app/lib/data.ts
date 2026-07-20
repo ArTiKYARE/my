@@ -230,6 +230,35 @@ export async function updateLead(
   await writeJsonFile(LEADS_FILE, leads);
   return updated;
 }
+/** Создать заявку вручную (id в формате contact route). */
+export async function addLead(data: {
+  name: string;
+  contact: string;
+  description?: string;
+}): Promise<Lead> {
+  const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
+  const lead: Lead = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: data.name,
+    contact: data.contact,
+    description: data.description ?? "",
+    status: "new",
+    createdAt: new Date().toISOString(),
+  };
+  leads.push(lead);
+  await writeJsonFile(LEADS_FILE, leads);
+  return lead;
+}
+
+/** Удалить заявку. false — заявка не найдена. */
+export async function deleteLead(id: string): Promise<boolean> {
+  const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
+  const filtered = leads.filter((lead) => lead.id !== id);
+  if (filtered.length === leads.length) return false;
+  await writeJsonFile(LEADS_FILE, filtered);
+  return true;
+}
+
 const POSTS_FILE = path.join(DATA_DIR, "posts.json");
 
 export async function getPosts(): Promise<Post[]> {

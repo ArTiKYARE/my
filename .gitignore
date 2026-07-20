@@ -69,6 +69,8 @@ Caddyfile.remote
 # Runtime data (server-side state, not for git)
 data/lead_favorites.json
 data/hunt_lead_status.json
+data/users.json
+data/activity.json
 data/login_attempts.json
 data/login_logs.json
 data/leads.json
