@@ -39,6 +39,9 @@ export interface Lead {
   description: string;
   status: LeadStatus;
   createdAt: string;
+  comment?: string;
+  services?: string[];
+  quantities?: Record<string, number>;
 }
 
 export interface Profile {

@@ -5,6 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { Project, Profile, Lead, LeadStatus, Post, EmailThread } from "./types";
+import { SERVICE_IDS } from "./services";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
@@ -175,6 +176,59 @@ export async function updateLeadStatus(
   leads[index] = { ...leads[index], status };
   await writeJsonFile(LEADS_FILE, leads);
   return leads[index];
+}
+
+export interface LeadPatch {
+  status?: LeadStatus;
+  comment?: string;
+  services?: string[];
+  quantities?: Record<string, number>;
+}
+
+/**
+ * Обновить заявку частично: применяются только переданные поля.
+ * status валидируется по VALID_STATUSES, comment обрезается до 2000 символов,
+ * services фильтруются по каталогу, quantities — положительные числа <= 10000
+ * и только для существующих услуг.
+ */
+export async function updateLead(
+  id: string,
+  patch: LeadPatch
+): Promise<Lead | null> {
+  const leads = await readJsonFile<Lead[]>(LEADS_FILE, []);
+  const index = leads.findIndex((lead) => lead.id === id);
+  if (index === -1) return null;
+
+  const updated: Lead = { ...leads[index] };
+
+  if (patch.status !== undefined && VALID_STATUSES.includes(patch.status)) {
+    updated.status = patch.status;
+  }
+  if (patch.comment !== undefined) {
+    updated.comment = String(patch.comment).slice(0, 2000);
+  }
+  if (patch.services !== undefined) {
+    updated.services = patch.services.filter((s) => SERVICE_IDS.has(s));
+  }
+  if (patch.quantities !== undefined) {
+    const quantities: Record<string, number> = {};
+    for (const [key, value] of Object.entries(patch.quantities)) {
+      if (
+        SERVICE_IDS.has(key) &&
+        typeof value === "number" &&
+        Number.isFinite(value) &&
+        value > 0 &&
+        value <= 10000
+      ) {
+        quantities[key] = value;
+      }
+    }
+    updated.quantities = quantities;
+  }
+
+  leads[index] = updated;
+  await writeJsonFile(LEADS_FILE, leads);
+  return updated;
 }
 const POSTS_FILE = path.join(DATA_DIR, "posts.json");
 
