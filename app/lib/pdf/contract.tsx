@@ -10,7 +10,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { Lead, Profile } from "../types";
-import { calcLeadTotals, fmt } from "./calc";
+import { calcLeadTotals, fmt, LeadTotals } from "./calc";
 import { registerPdfFonts } from "./fonts";
 
 export interface ContractParties {
@@ -85,12 +85,14 @@ function ContractDocument({
   lead,
   profile,
   parties,
+  totals,
 }: {
   lead: Lead;
   profile: Profile;
   parties: ContractParties;
+  totals: LeadTotals;
 }) {
-  const { rows, oneTime, monthly } = calcLeadTotals(lead);
+  const { rows, oneTime, monthly } = totals;
   const today = new Date().toLocaleDateString("ru-RU");
   const executorName = parties.executorName || profile.name || "Kos-Ko";
   const executorContact = parties.executorContact || profileContactLine(profile);
@@ -228,7 +230,8 @@ export async function renderContractPdf(
   parties: ContractParties
 ): Promise<Buffer> {
   registerPdfFonts();
+  const totals = await calcLeadTotals(lead);
   return renderToBuffer(
-    <ContractDocument lead={lead} profile={profile} parties={parties} />
+    <ContractDocument lead={lead} profile={profile} parties={parties} totals={totals} />
   );
 }

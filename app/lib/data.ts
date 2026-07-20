@@ -5,7 +5,7 @@ import path from "path";
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { Project, Profile, Lead, LeadStatus, Post, EmailThread } from "./types";
-import { SERVICE_IDS } from "./services";
+import { getServiceIds } from "./services";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
@@ -207,14 +207,19 @@ export async function updateLead(
   if (patch.comment !== undefined) {
     updated.comment = String(patch.comment).slice(0, 2000);
   }
+  const serviceIds =
+    patch.services !== undefined || patch.quantities !== undefined
+      ? await getServiceIds()
+      : null;
+
   if (patch.services !== undefined) {
-    updated.services = patch.services.filter((s) => SERVICE_IDS.has(s));
+    updated.services = patch.services.filter((s) => serviceIds!.has(s));
   }
   if (patch.quantities !== undefined) {
     const quantities: Record<string, number> = {};
     for (const [key, value] of Object.entries(patch.quantities)) {
       if (
-        SERVICE_IDS.has(key) &&
+        serviceIds!.has(key) &&
         typeof value === "number" &&
         Number.isFinite(value) &&
         value > 0 &&

@@ -11,8 +11,17 @@ import AdminLeads from "./AdminLeads";
 import AdminMail from "./AdminMail";
 import AdminLeadHunter from "./AdminLeadHunter";
 import AdminAccounts from "./AdminAccounts";
+import AdminServices from "./AdminServices";
 
-type Tab = "leads" | "hunt" | "projects" | "posts" | "mail" | "profile" | "accounts";
+type Tab =
+  | "leads"
+  | "hunt"
+  | "projects"
+  | "posts"
+  | "mail"
+  | "profile"
+  | "services"
+  | "accounts";
 
 interface AdminDashboardProps {
   profile: Profile;
@@ -103,6 +112,16 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    id: "services",
+    label: "Услуги",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" {...strokeProps}>
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
+      </svg>
+    ),
+  },
+  {
     id: "accounts",
     label: "Сотрудники",
     icon: (
@@ -169,7 +188,11 @@ export default function AdminDashboard({
         className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
       >
         {navItems
-          .filter((item) => item.id !== "accounts" || role === "admin")
+          .filter(
+            (item) =>
+              (item.id !== "accounts" && item.id !== "services") ||
+              role === "admin"
+          )
           .map((item) => {
             const active = activeTab === item.id;
             return (
@@ -291,6 +314,13 @@ export default function AdminDashboard({
             <section>
               <SectionHeader label="Администрирование" title="Сотрудники" />
               <AdminAccounts />
+            </section>
+          )}
+
+          {activeTab === "services" && role === "admin" && (
+            <section>
+              <SectionHeader label="Прайс" title="Услуги" />
+              <AdminServices />
             </section>
           )}
 

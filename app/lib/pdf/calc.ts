@@ -2,7 +2,7 @@
 // (та же, что в UI карточки заявки).
 
 import { Lead } from "../types";
-import { SERVICE_CATALOG, ServiceItem } from "../services";
+import { getServiceCatalog, ServiceItem } from "../services";
 
 export interface CalcRow {
   category: string; // категория из каталога (для группировки в таблице)
@@ -35,7 +35,8 @@ function hasQty(item: ServiceItem): boolean {
   return item.unit === "час" || item.unit === "шт";
 }
 
-export function calcLeadTotals(lead: Lead): LeadTotals {
+export async function calcLeadTotals(lead: Lead): Promise<LeadTotals> {
+  const catalog = await getServiceCatalog();
   const selected = new Set(lead.services ?? []);
   const quantities = lead.quantities ?? {};
 
@@ -44,7 +45,7 @@ export function calcLeadTotals(lead: Lead): LeadTotals {
   let monthly = 0;
   const percentRows: CalcRow[] = [];
 
-  for (const category of SERVICE_CATALOG) {
+  for (const category of catalog) {
     for (const item of category.items) {
       if (!selected.has(item.id)) continue;
 

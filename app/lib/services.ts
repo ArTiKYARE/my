@@ -1,5 +1,10 @@
 // Каталог услуг для карточки заявки: выбор услуг и расчёт цены.
 // Базовая цена = число после «от» из прайса, в рублях.
+// SERVICE_CATALOG — дефолт; актуальный каталог живёт в data/services.json
+// (см. getServiceCatalog в конце файла).
+
+import { promises as fs } from "fs";
+import path from "path";
 
 export interface ServiceItem {
   id: string; // slug, уникальный, напр. "landing-constructor"
@@ -68,6 +73,59 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
         price: 1500,
         unit: "час",
       },
+      {
+        id: "landing-nextjs",
+        name: "Лендинг на Next.js/React",
+        note: "Быстрый лендинг на современном стеке, SSR, формы, аналитика",
+        price: 60000,
+      },
+      {
+        id: "mvp-service",
+        name: "MVP веб-сервиса",
+        note: "Первая версия продукта: ключевой сценарий, авторизация, базовый UI",
+        price: 200000,
+      },
+      {
+        id: "web-portal",
+        name: "Личный кабинет/веб-портал",
+        note: "Закрытая зона для клиентов: заказы, документы, оплаты",
+        price: 180000,
+      },
+    ],
+  },
+  {
+    category: "Чат-боты и автоматизация",
+    items: [
+      {
+        id: "telegram-bot",
+        name: "Telegram-бот",
+        note: "Бот под задачу: приём заявок, консультации, уведомления",
+        price: 30000,
+      },
+      {
+        id: "chatbot-whatsapp",
+        name: "Чат-бот для WhatsApp/TG",
+        note: "Сценарии диалогов, интеграция с CRM, переключение на оператора",
+        price: 40000,
+      },
+      {
+        id: "sales-funnel",
+        name: "Автоворонка продаж",
+        note: "Цепочка касаний: бот + рассылки + напоминания менеджеру",
+        price: 25000,
+      },
+      {
+        id: "integration-1c",
+        name: "Интеграция с 1С",
+        note: "Обмен товарами, заказами и остатками между сайтом и 1С",
+        price: 30000,
+      },
+      {
+        id: "telephony",
+        name: "Подключение телефонии",
+        note: "Виртуальный номер, запись звонков, интеграция с сайтом",
+        price: 5000,
+      },
     ],
   },
   {
@@ -122,6 +180,24 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
         note: "Статичный баннер для рекламных сетей или соцсетей",
         price: 1500,
         unit: "шт",
+      },
+      {
+        id: "presentation",
+        name: "Презентация",
+        note: "Дизайн презентации компании или продукта, до 15 слайдов",
+        price: 10000,
+      },
+      {
+        id: "polygraphy",
+        name: "Полиграфия",
+        note: "Визитки, листовки, буклеты — макеты к печати",
+        price: 5000,
+      },
+      {
+        id: "motion-design",
+        name: "Motion-дизайн",
+        note: "Анимированные ролики и заставки для сайта и соцсетей",
+        price: 8000,
       },
     ],
   },
@@ -186,6 +262,26 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
         note: "Разбор текущих кампаний, точки слива бюджета, рекомендации",
         price: 7000,
       },
+      {
+        id: "email-marketing-monthly",
+        name: "E-mail-маркетинг",
+        note: "Письма, сегменты базы, регулярные рассылки под ключ",
+        price: 15000,
+        unit: "мес",
+      },
+      {
+        id: "reviews-rating",
+        name: "Работа с отзывами и рейтингом",
+        note: "Мониторинг и ответы на отзывы на картах и отзовиках",
+        price: 8000,
+        unit: "мес",
+      },
+      {
+        id: "geo-ads",
+        name: "Геореклама",
+        note: "Продвижение на Яндекс Картах и 2ГИС: карточки, приоритетное размещение",
+        price: 10000,
+      },
     ],
   },
   {
@@ -230,6 +326,24 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
         name: "Обработка изображений",
         note: "Подбор, обрезка, сжатие и подготовка изображений для сайта",
         price: 2000,
+      },
+      {
+        id: "photoshoot",
+        name: "Фотосессия для сайта",
+        note: "Предметная и процессная съёмка, обработка фото",
+        price: 15000,
+      },
+      {
+        id: "video",
+        name: "Видеоролик",
+        note: "Ролик о компании или продукте до 60 секунд",
+        price: 30000,
+      },
+      {
+        id: "naming",
+        name: "Нейминг",
+        note: "Варианты названия с проверкой доменов и занятости",
+        price: 10000,
       },
     ],
   },
@@ -380,7 +494,137 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
   },
 ];
 
-/** Все существующие id услуг — для валидации на API. */
+/** Все id дефолтного каталога. Для валидации используйте getServiceIds(). */
 export const SERVICE_IDS: ReadonlySet<string> = new Set(
   SERVICE_CATALOG.flatMap((c) => c.items.map((i) => i.id))
 );
+
+// ---------------------------------------------------------------------------
+// Динамическое хранилище каталога: data/services.json.
+// При первом обращении файл сидится дефолтным SERVICE_CATALOG.
+// ---------------------------------------------------------------------------
+
+const DATA_DIR = path.join(process.cwd(), "data");
+const SERVICES_FILE = path.join(DATA_DIR, "services.json");
+
+async function ensureDataDir() {
+  try {
+    await fs.access(DATA_DIR);
+  } catch {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+  }
+}
+
+async function writeCatalog(catalog: ServiceCategory[]): Promise<void> {
+  await ensureDataDir();
+  await fs.writeFile(SERVICES_FILE, JSON.stringify(catalog, null, 2), "utf-8");
+}
+
+/** Каталог услуг: из data/services.json, при отсутствии файла — сид дефолта. */
+export async function getServiceCatalog(): Promise<ServiceCategory[]> {
+  try {
+    const content = await fs.readFile(SERVICES_FILE, "utf-8");
+    const parsed = JSON.parse(content);
+    if (Array.isArray(parsed)) return parsed as ServiceCategory[];
+  } catch {
+    // файла ещё нет — сидим дефолт
+  }
+  await writeCatalog(SERVICE_CATALOG);
+  return SERVICE_CATALOG;
+}
+
+/** Актуальный набор id услуг — для валидации на API. */
+export async function getServiceIds(): Promise<Set<string>> {
+  const catalog = await getServiceCatalog();
+  return new Set(catalog.flatMap((c) => c.items.map((i) => i.id)));
+}
+
+const TRANSLIT: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh",
+  з: "z", и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o",
+  п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "c",
+  ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+};
+
+/** Slug из названия услуги; при коллизии — суффикс -2, -3, ... */
+function makeSlug(name: string, existing: Set<string>): string {
+  const base =
+    name
+      .toLowerCase()
+      .split("")
+      .map((ch) => TRANSLIT[ch] ?? ch)
+      .join("")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "service";
+  let slug = base;
+  let n = 2;
+  while (existing.has(slug)) {
+    slug = `${base}-${n}`;
+    n += 1;
+  }
+  return slug;
+}
+
+export type ServiceItemInput = Omit<ServiceItem, "id">;
+
+/** Добавить услугу в категорию (категория создаётся, если её нет). */
+export async function addServiceItem(
+  category: string,
+  item: ServiceItemInput
+): Promise<ServiceCategory[]> {
+  const catalog = await getServiceCatalog();
+  const existing = new Set(catalog.flatMap((c) => c.items.map((i) => i.id)));
+  const newItem: ServiceItem = { ...item, id: makeSlug(item.name, existing) };
+
+  let group = catalog.find((c) => c.category === category);
+  if (!group) {
+    group = { category, items: [] };
+    catalog.push(group);
+  }
+  group.items.push(newItem);
+
+  await writeCatalog(catalog);
+  return catalog;
+}
+
+/** Обновить услугу; patch.category перемещает её в другую категорию. */
+export async function updateServiceItem(
+  id: string,
+  patch: Partial<ServiceItemInput> & { category?: string }
+): Promise<ServiceCategory[] | null> {
+  const catalog = await getServiceCatalog();
+  const group = catalog.find((c) => c.items.some((i) => i.id === id));
+  if (!group) return null;
+
+  const index = group.items.findIndex((i) => i.id === id);
+  const { category: newCategory, ...fields } = patch;
+  group.items[index] = { ...group.items[index], ...fields, id };
+  const item = group.items[index];
+
+  if (newCategory && newCategory !== group.category) {
+    group.items.splice(index, 1);
+    let target = catalog.find((c) => c.category === newCategory);
+    if (!target) {
+      target = { category: newCategory, items: [] };
+      catalog.push(target);
+    }
+    target.items.push(item);
+  }
+
+  // пустые категории убираем
+  const cleaned = catalog.filter((c) => c.items.length > 0);
+  await writeCatalog(cleaned);
+  return cleaned;
+}
+
+/** Удалить услугу. null — услуга не найдена. */
+export async function deleteServiceItem(id: string): Promise<ServiceCategory[] | null> {
+  const catalog = await getServiceCatalog();
+  const group = catalog.find((c) => c.items.some((i) => i.id === id));
+  if (!group) return null;
+
+  group.items = group.items.filter((i) => i.id !== id);
+  const cleaned = catalog.filter((c) => c.items.length > 0);
+  await writeCatalog(cleaned);
+  return cleaned;
+}

@@ -10,8 +10,12 @@ import {
 } from "@react-pdf/renderer";
 import { Lead } from "../types";
 import { Profile } from "../types";
-import { calcLeadTotals, fmt, CalcRow } from "./calc";
+import { calcLeadTotals, fmt, CalcRow, LeadTotals } from "./calc";
 import { registerPdfFonts } from "./fonts";
+
+// Контакты студии в КП — фиксированные (Telegram в КП не выводим)
+const STUDIO_EMAIL = "support@kos-ko.ru";
+const STUDIO_PHONE = "+7 960 983 90 64";
 
 const ACCENT = "#3b82f6";
 const INK = "#0f172a";
@@ -99,9 +103,12 @@ const styles = StyleSheet.create({
 
 function profileContacts(profile: Profile): string {
   const c = profile.contacts ?? {};
-  return [c.website, c.email, c.phone, c.telegram && `Telegram: ${c.telegram}`]
-    .filter(Boolean)
-    .join("  ·  ");
+  const parts: (string | undefined)[] = [c.website];
+  if (c.email && c.email !== STUDIO_EMAIL) parts.push(c.email);
+  parts.push(STUDIO_EMAIL);
+  if (c.phone && c.phone !== STUDIO_PHONE) parts.push(c.phone);
+  parts.push(STUDIO_PHONE);
+  return parts.filter(Boolean).join("  ·  ");
 }
 
 function groupByCategory(rows: CalcRow[]): [string, CalcRow[]][] {
@@ -117,8 +124,16 @@ function groupByCategory(rows: CalcRow[]): [string, CalcRow[]][] {
   return groups;
 }
 
-function ProposalDocument({ lead, profile }: { lead: Lead; profile: Profile }) {
-  const { rows, oneTime, monthly } = calcLeadTotals(lead);
+function ProposalDocument({
+  lead,
+  profile,
+  totals,
+}: {
+  lead: Lead;
+  profile: Profile;
+  totals: LeadTotals;
+}) {
+  const { rows, oneTime, monthly } = totals;
   const today = new Date().toLocaleDateString("ru-RU");
   const groups = groupByCategory(rows);
   let rowIndex = 0;
@@ -219,5 +234,6 @@ function ProposalDocument({ lead, profile }: { lead: Lead; profile: Profile }) {
 
 export async function renderProposalPdf(lead: Lead, profile: Profile): Promise<Buffer> {
   registerPdfFonts();
-  return renderToBuffer(<ProposalDocument lead={lead} profile={profile} />);
+  const totals = await calcLeadTotals(lead);
+  return renderToBuffer(<ProposalDocument lead={lead} profile={profile} totals={totals} />);
 }

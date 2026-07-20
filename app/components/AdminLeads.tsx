@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Lead, LeadStatus } from "../lib/types";
-import { SERVICE_CATALOG } from "../lib/services";
+import { ServiceCategory } from "../lib/services";
 
 const statusLabels: Record<LeadStatus, string> = {
   new: "Новая",
@@ -39,13 +39,14 @@ function formatPrice(n: number): string {
 /** Живой расчёт по выбранным услугам: разовая сумма и помесячная. */
 function calcTotals(
   services: string[] | undefined,
-  quantities: Record<string, number> | undefined
+  quantities: Record<string, number> | undefined,
+  catalog: ServiceCategory[]
 ): { oneTime: number; monthly: number } {
   const selected = new Set(services ?? []);
   let oneTime = 0;
   let monthly = 0;
   let percentSum = 0;
-  for (const category of SERVICE_CATALOG) {
+  for (const category of catalog) {
     for (const item of category.items) {
       if (!selected.has(item.id)) continue;
       const qty = quantities?.[item.id] ?? 1;
@@ -117,6 +118,22 @@ export default function AdminLeads() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("newest");
+
+  // Services catalog (from API, shared by cards and drawer)
+  const [catalog, setCatalog] = useState<ServiceCategory[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/services")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.catalog) setCatalog(data.catalog);
+      })
+      .catch(() => {
+        // каталог недоступен — цены не считаем
+      })
+      .finally(() => setCatalogLoading(false));
+  }, []);
 
   // Create lead modal
   const [createOpen, setCreateOpen] = useState(false);
@@ -221,10 +238,10 @@ export default function AdminLeads() {
       new Map(
         leads.map((lead) => [
           lead.id,
-          calcTotals(lead.services, lead.quantities),
+          calcTotals(lead.services, lead.quantities, catalog),
         ])
       ),
-    [leads]
+    [leads, catalog]
   );
 
   const sortedLeads = useMemo(() => {
@@ -476,6 +493,8 @@ export default function AdminLeads() {
         <LeadDrawer
           key={selectedLead.id}
           lead={selectedLead}
+          catalog={catalog}
+          catalogLoading={catalogLoading}
           onClose={() => setSelectedId(null)}
           onStatusChange={updateStatus}
           onSaved={(updated) =>
@@ -575,12 +594,16 @@ export default function AdminLeads() {
 
 function LeadDrawer({
   lead,
+  catalog,
+  catalogLoading,
   onClose,
   onStatusChange,
   onSaved,
   onDeleted,
 }: {
   lead: Lead;
+  catalog: ServiceCategory[];
+  catalogLoading: boolean;
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => void;
   onSaved: (lead: Lead) => void;
@@ -606,6 +629,7 @@ function LeadDrawer({
   const [executorContact, setExecutorContact] = useState("");
   const [contractLoading, setContractLoading] = useState(false);
   const [contractError, setContractError] = useState("");
+  const [contractFmt, setContractFmt] = useState<"pdf" | "docx">("pdf");
 
   useEffect(() => {
     return () => {
@@ -622,7 +646,7 @@ function LeadDrawer({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
-  const totals = calcTotals(services, quantities);
+  const totals = calcTotals(services, quantities, catalog);
   const href = contactHref(lead.contact);
   const phone = phoneHref(lead.contact);
   const hasSavedServices = (lead.services?.length ?? 0) > 0;
@@ -690,6 +714,7 @@ function LeadDrawer({
           ...(executorContact.trim()
             ? { executorContact: executorContact.trim() }
             : {}),
+          fmt: contractFmt,
         }),
       });
       if (!response.ok) {
@@ -700,7 +725,7 @@ function LeadDrawer({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Dogovor-${lead.id}.pdf`;
+      a.download = `Dogovor-${lead.id}.${contractFmt}`;
       a.click();
       URL.revokeObjectURL(url);
       setContractOpen(false);
@@ -877,8 +902,18 @@ function LeadDrawer({
             {/* Services */}
             <section>
               <span className="section-label">Услуги и расчёт</span>
-              <div className="space-y-6">
-                {SERVICE_CATALOG.map((category) => (
+              {catalogLoading ? (
+                <div className="space-y-2.5">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-9 bg-surface-elevated border border-border animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {catalog.map((category) => (
                   <div key={category.category}>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2.5">
                       {category.category}
@@ -933,8 +968,9 @@ function LeadDrawer({
                       })}
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Documents */}
@@ -1101,6 +1137,27 @@ function LeadDrawer({
                 placeholder="По умолчанию из профиля"
                 className="input-field"
               />
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1.5">Формат</p>
+              <div className="flex gap-0 border border-border w-fit">
+                {(["pdf", "docx"] as const).map((fmt, i) => (
+                  <button
+                    key={fmt}
+                    onClick={() => setContractFmt(fmt)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                      i > 0 ? "border-l border-border" : ""
+                    } ${
+                      contractFmt === fmt
+                        ? "bg-foreground text-background"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {fmt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {contractError && (
