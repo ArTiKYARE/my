@@ -76,11 +76,38 @@ function formatItemPrice(item: {
 
 function contactHref(contact: string): string | null {
   if (contact.includes("@")) return `mailto:${contact.trim()}`;
+  return phoneHref(contact);
+}
+
+function phoneHref(contact: string): string | null {
+  if (contact.includes("@")) return null;
   if (/[+0-9][\d\s()\-]{5,}/.test(contact)) {
     return `tel:${contact.replace(/[^\d+]/g, "")}`;
   }
   return null;
 }
+
+function leadStatusTextClass(status: LeadStatus): string {
+  switch (status) {
+    case "new":
+      return "text-amber-400";
+    case "in-progress":
+      return "text-brand";
+    case "done":
+      return "text-emerald-400";
+    default:
+      return "text-muted";
+  }
+}
+
+const sortOptions = [
+  { id: "newest", label: "Сначала новые" },
+  { id: "oldest", label: "Сначала старые" },
+  { id: "sum-desc", label: "По сумме ↓" },
+  { id: "sum-asc", label: "По сумме ↑" },
+] as const;
+
+type SortMode = (typeof sortOptions)[number]["id"];
 
 export default function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -88,6 +115,8 @@ export default function AdminLeads() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<SortMode>("newest");
 
   async function loadLeads() {
     try {
@@ -126,9 +155,60 @@ export default function AdminLeads() {
   }, []);
 
   const filteredLeads = useMemo(() => {
-    if (filter === "all") return leads;
-    return leads.filter((lead) => lead.status === filter);
-  }, [leads, filter]);
+    const query = search.trim().toLowerCase();
+    return leads.filter((lead) => {
+      if (filter !== "all" && lead.status !== filter) return false;
+      if (!query) return true;
+      return [lead.name, lead.contact, lead.description, lead.comment ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [leads, filter, search]);
+
+  const totalsMap = useMemo(
+    () =>
+      new Map(
+        leads.map((lead) => [
+          lead.id,
+          calcTotals(lead.services, lead.quantities),
+        ])
+      ),
+    [leads]
+  );
+
+  const sortedLeads = useMemo(() => {
+    const arr = [...filteredLeads];
+    const sum = (lead: Lead) => totalsMap.get(lead.id)?.oneTime ?? 0;
+    const hasServices = (lead: Lead) => (lead.services?.length ?? 0) > 0;
+    switch (sort) {
+      case "oldest":
+        arr.sort(
+          (a, b) => +new Date(a.createdAt) - +new Date(b.createdAt)
+        );
+        break;
+      case "sum-desc":
+        // Заявки без услуг — в конец
+        arr.sort(
+          (a, b) =>
+            Number(hasServices(b)) - Number(hasServices(a)) ||
+            sum(b) - sum(a)
+        );
+        break;
+      case "sum-asc":
+        arr.sort(
+          (a, b) =>
+            Number(hasServices(b)) - Number(hasServices(a)) ||
+            sum(a) - sum(b)
+        );
+        break;
+      default:
+        arr.sort(
+          (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)
+        );
+    }
+    return arr;
+  }, [filteredLeads, sort, totalsMap]);
 
   const counts = useMemo(() => {
     const map: Record<LeadStatus | "all", number> = {
@@ -199,22 +279,70 @@ export default function AdminLeads() {
         ))}
       </div>
 
-      {filteredLeads.length === 0 ? (
-        <p className="text-muted">В выбранном фильтре заявок нет.</p>
+      {/* Search + sort */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <svg
+            viewBox="0 0 24 24"
+            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск по имени, контакту, описанию"
+            className="input-field pl-9 py-2 text-sm"
+          />
+        </div>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortMode)}
+          className="bg-surface border border-border text-xs px-2 py-1.5 cursor-pointer transition-colors focus:border-primary text-muted"
+        >
+          {sortOptions.map((option) => (
+            <option key={option.id} value={option.id} className="text-foreground">
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {sortedLeads.length === 0 ? (
+        leads.length === 0 ? (
+          <div className="panel p-10 text-center">
+            <p className="text-muted">
+              Заявок пока нет — новые появятся здесь после отправки формы на
+              сайте.
+            </p>
+          </div>
+        ) : (
+          <p className="text-muted">Ничего не найдено.</p>
+        )
       ) : (
-        <div className="space-y-4">
-          {filteredLeads.map((lead) => {
-            const totals = calcTotals(lead.services, lead.quantities);
+        <div className="space-y-3">
+          {sortedLeads.map((lead) => {
+            const totals = totalsMap.get(lead.id) ?? {
+              oneTime: 0,
+              monthly: 0,
+            };
             const hasPrice = (lead.services?.length ?? 0) > 0;
             return (
               <button
                 key={lead.id}
                 onClick={() => setSelectedId(lead.id)}
-                className="panel card-hover p-5 w-full text-left cursor-pointer"
+                className="panel card-hover p-4 w-full text-left cursor-pointer"
               >
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-center gap-3 mb-1.5">
                       <h3 className="font-semibold text-foreground">
                         {lead.name}
                       </h3>
@@ -231,27 +359,55 @@ export default function AdminLeads() {
                       {lead.contact}
                     </p>
                     {lead.description && (
-                      <p className="text-sm text-muted line-clamp-3">
+                      <p className="text-sm text-muted line-clamp-2">
                         {lead.description}
                       </p>
                     )}
-                    <p className="text-xs text-muted/60 mt-3">
+                    <p className="text-xs text-muted/60 mt-2">
                       {new Date(lead.createdAt).toLocaleString("ru-RU")}
                     </p>
                   </div>
 
-                  {hasPrice && (
-                    <div className="shrink-0 text-right">
-                      <p className="text-lg font-semibold">
-                        от {formatPrice(totals.oneTime)}
-                      </p>
-                      {totals.monthly > 0 && (
-                        <p className="text-xs text-muted mt-0.5">
-                          + {formatPrice(totals.monthly)}/мес
+                  <div className="shrink-0 flex md:flex-col items-center md:items-end gap-2">
+                    {hasPrice && (
+                      <div className="text-right">
+                        <p className="text-lg font-semibold">
+                          от {formatPrice(totals.oneTime)}
                         </p>
-                      )}
-                    </div>
-                  )}
+                        {totals.monthly > 0 && (
+                          <p className="text-xs text-muted mt-0.5">
+                            + {formatPrice(totals.monthly)}/мес
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <select
+                      value={lead.status}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        updateStatus(lead.id, e.target.value as LeadStatus);
+                      }}
+                      className={`bg-surface border border-border text-xs px-2 py-1.5 cursor-pointer transition-colors focus:border-primary ${leadStatusTextClass(
+                        lead.status
+                      )}`}
+                    >
+                      {filterTabs
+                        .filter(
+                          (tab): tab is { id: LeadStatus; label: string } =>
+                            tab.id !== "all"
+                        )
+                        .map((tab) => (
+                          <option
+                            key={tab.id}
+                            value={tab.id}
+                            className="text-foreground"
+                          >
+                            {statusLabels[tab.id]}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </button>
             );
@@ -298,14 +454,120 @@ function LeadDrawer({
   const [error, setError] = useState("");
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Contract modal
+  const [contractOpen, setContractOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerContact, setCustomerContact] = useState("");
+  const [executorName, setExecutorName] = useState("");
+  const [executorContact, setExecutorContact] = useState("");
+  const [contractLoading, setContractLoading] = useState(false);
+  const [contractError, setContractError] = useState("");
+
   useEffect(() => {
     return () => {
       if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
     };
   }, []);
 
+  // Close on Escape
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   const totals = calcTotals(services, quantities);
   const href = contactHref(lead.contact);
+  const phone = phoneHref(lead.contact);
+  const hasSavedServices = (lead.services?.length ?? 0) > 0;
+
+  // Есть ли несохранённые изменения (заметка/услуги/количества)
+  const dirty = useMemo(() => {
+    if (comment !== (lead.comment ?? "")) return true;
+    const savedServices = new Set(lead.services ?? []);
+    if (
+      services.length !== savedServices.size ||
+      services.some((id) => !savedServices.has(id))
+    ) {
+      return true;
+    }
+    const savedQuantities = lead.quantities ?? {};
+    const keys = new Set([
+      ...Object.keys(quantities),
+      ...Object.keys(savedQuantities),
+    ]);
+    for (const key of keys) {
+      if ((quantities[key] ?? 1) !== (savedQuantities[key] ?? 1)) return true;
+    }
+    return false;
+  }, [comment, services, quantities, lead]);
+
+  function openContract() {
+    let executor = { name: "", contact: "" };
+    try {
+      const raw = localStorage.getItem("leadhunter_sender");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        executor = {
+          name: parsed.name ?? "",
+          contact: parsed.contact ?? "",
+        };
+      }
+    } catch {
+      // ignore broken storage
+    }
+    setCustomerName(lead.name);
+    setCustomerContact(lead.contact);
+    setExecutorName(executor.name);
+    setExecutorContact(executor.contact);
+    setContractError("");
+    setContractOpen(true);
+  }
+
+  async function generateContract() {
+    if (!customerName.trim() || !customerContact.trim()) {
+      setContractError("Заполните обязательные поля заказчика.");
+      return;
+    }
+    setContractLoading(true);
+    setContractError("");
+    try {
+      const response = await fetch(`/api/leads/${lead.id}/contract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: customerName.trim(),
+          customerContact: customerContact.trim(),
+          ...(executorName.trim()
+            ? { executorName: executorName.trim() }
+            : {}),
+          ...(executorContact.trim()
+            ? { executorContact: executorContact.trim() }
+            : {}),
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Не удалось сформировать договор");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Dogovor-${lead.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setContractOpen(false);
+    } catch (err) {
+      setContractError(
+        err instanceof Error ? err.message : "Не удалось сформировать договор"
+      );
+    } finally {
+      setContractLoading(false);
+    }
+  }
 
   function toggleService(id: string) {
     setServices((prev) =>
@@ -385,16 +647,29 @@ function LeadDrawer({
             <section>
               <span className="section-label">Информация</span>
               <div className="space-y-3">
-                <p className="text-sm">
-                  <span className="text-muted">Контакт:</span>{" "}
-                  {href ? (
-                    <a href={href} className="text-accent hover:underline break-all">
-                      {lead.contact}
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-sm">
+                    <span className="text-muted">Контакт:</span>{" "}
+                    {href ? (
+                      <a
+                        href={href}
+                        className="text-accent hover:underline break-all"
+                      >
+                        {lead.contact}
+                      </a>
+                    ) : (
+                      <span className="break-words">{lead.contact}</span>
+                    )}
+                  </p>
+                  {phone && (
+                    <a
+                      href={phone}
+                      className="btn-secondary px-3 py-1.5 text-xs"
+                    >
+                      Позвонить
                     </a>
-                  ) : (
-                    <span className="break-words">{lead.contact}</span>
                   )}
-                </p>
+                </div>
                 {lead.description && (
                   <p className="text-sm text-muted whitespace-pre-line break-words">
                     {lead.description}
@@ -498,6 +773,37 @@ function LeadDrawer({
                 ))}
               </div>
             </section>
+
+            {/* Documents */}
+            <section>
+              <span className="section-label">Документы</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() =>
+                    window.open(`/api/leads/${lead.id}/proposal`, "_blank")
+                  }
+                  disabled={!hasSavedServices}
+                  className="btn-secondary px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Скачать КП (PDF)
+                </button>
+                <button
+                  onClick={openContract}
+                  className="btn-primary px-4 py-2 text-sm"
+                >
+                  Договор (PDF)
+                </button>
+              </div>
+              {!hasSavedServices ? (
+                <p className="text-xs text-muted mt-2">
+                  Сначала выберите услуги
+                </p>
+              ) : dirty ? (
+                <p className="text-xs text-amber-400 mt-2">
+                  Сохраните изменения, чтобы они попали в документ
+                </p>
+              ) : null}
+            </section>
           </div>
         </div>
 
@@ -527,6 +833,100 @@ function LeadDrawer({
           </button>
         </div>
       </aside>
+
+      {/* Contract modal */}
+      {contractOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"
+          onClick={() => setContractOpen(false)}
+        >
+          <div
+            className="panel max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-lg font-semibold">Договор (PDF)</h3>
+              <button
+                onClick={() => setContractOpen(false)}
+                aria-label="Закрыть"
+                className="p-1 text-muted hover:text-foreground transition-colors"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Заказчик (компания/ФИО) *
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Контакт заказчика *
+              </label>
+              <input
+                type="text"
+                value={customerContact}
+                onChange={(e) => setCustomerContact(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Исполнитель
+              </label>
+              <input
+                type="text"
+                value={executorName}
+                onChange={(e) => setExecutorName(e.target.value)}
+                placeholder="По умолчанию из профиля"
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Контакт исполнителя
+              </label>
+              <input
+                type="text"
+                value={executorContact}
+                onChange={(e) => setExecutorContact(e.target.value)}
+                placeholder="По умолчанию из профиля"
+                className="input-field"
+              />
+            </div>
+
+            {contractError && (
+              <p className="text-sm text-red-400">{contractError}</p>
+            )}
+
+            <button
+              onClick={generateContract}
+              disabled={contractLoading}
+              className="btn-primary w-full py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {contractLoading ? "Формирование..." : "Сформировать"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
